@@ -15,7 +15,7 @@
 #define ps_darray_reserve_precise(arr, new_capacity) \
     PS_BLK( \
         if ((arr)->capacity < (new_capacity)) { \
-            (arr)->items = PS_REALLOC((arr)->items, (new_capacity) * sizeof(*(arr)->items)); \
+            (arr)->items = PS_DECLTYPE_CAST((arr)->items)(PS_REALLOC((arr)->items, (new_capacity) * sizeof(*(arr)->items))); \
             (arr)->capacity = (new_capacity); \
             PS_ASSERT((arr)->items != NULL && "Failed to reallocate memory for dynamic array"); \
         } \
