@@ -74,26 +74,28 @@ typedef struct ps_build_frame_t{
 
 typedef PS_DARRAY_T(ps_build_frame_t) ps_build_frame_stack; 
 
-PS_DEF int ps_build_run_iterative(ps_graph_t *graph);
+PS_DEF int ps_build_run_(ps_graph_t *graph);
 
 #define ps_build_run(graph) \
     PS_BLK( \
-        ps_build_run_iterative(&(graph)); \
+        ps_build_run_((graph)); \
     )
+
 
 
 #ifdef PS_BUILD_IMPLEMENTATION
 
-PS_DEF int ps_shell_fn(const char **args){
-    PS_TODO("SHELL FN")
-}
-
-PS_DEF int ps_build_run_iterative(ps_graph_t *graph) {
+PS_DEF int ps_build_run_(ps_graph_t *graph) {
     // Create a local dynamic array to act as our explicit stack
     ps_build_frame_stack stack = {0};
+    PS_DARRAY_T(char) states = {0};
+    ps_darray_resize(&states, graph->size);
 
     // Push the root node (index 0) to start
+    ps_darray_set(&states, 0, 1);
     ps_darray_append(&stack, ((ps_build_frame_t){ .node_idx = 0, .child_idx = 0 }));
+
+    int result = 0;
 
     while (!ps_darray_is_empty(&stack)) {
         // Look at the top frame without popping it yet
@@ -108,33 +110,46 @@ PS_DEF int ps_build_run_iterative(ps_graph_t *graph) {
             
             // Advance parent's child index for the next iteration
             frame->child_idx++;
-
-            // Push the child frame
-            ps_darray_append(&stack, ((ps_build_frame_t){ .node_idx = next_child_idx, .child_idx = 0 }));
+            if(ps_darray_get(&states, next_child_idx) == 1){
+                PS_AFTER_GOTO(
+                    result = -1;,
+                    defer
+                );
+            }
+            if (ps_darray_get(&states, next_child_idx) == 0){
+                ps_darray_set(&states, next_child_idx, 1);
+                ps_darray_append(&stack, ((ps_build_frame_t){ .node_idx = next_child_idx, .child_idx = 0 }));
+            }
         } 
         // 2. All children finished! Pop this frame and execute the node.
         else {
+            ps_idx_t completed_idx = frame->node_idx;
             ps_darray_pop(&stack); // Remove frame from stack
-            if (node->fn == NULL) continue;
-            int res = node->fn(node->ctx);
-            if (res != PS_VFN_RESULT_SUCCESS && res != PS_VFN_RESULT_SKIP) {
-                ps_darray_free(&stack);
-                return res; // Stop on failure
+            ps_darray_set(&states, completed_idx, 2);
+            if (node->fn != NULL){
+                int res = node->fn(node->ctx);
+                if (res != PS_VFN_RESULT_SUCCESS && res != PS_VFN_RESULT_SKIP) {
+                    PS_AFTER_GOTO(
+                        result = res;,
+                        defer
+                    );
+                }
             }
         }
     }
-
-    ps_darray_free(&stack);
-    return PS_VFN_RESULT_SUCCESS;
+    defer:
+        ps_darray_free(&stack);
+        ps_darray_free(&states);
+        return result;
 }
 
 #ifndef PS_NO_BUILD 
-static DARRAY(ps_graph_node_t) ps_build_graph = {0};
+static ps_graph_t ps_build_graph = {0};
 int build(int argc, char** argv);
 int main(int argc, char** argv) {
-    ps_darray_reserve(ps_build_graph,1);
+    ps_darray_resize(&ps_build_graph,1);
     if(build(argc, argv)) return 1;
-    ps_build_run(ps_build_graph);
+    ps_build_run(&ps_build_graph);
 }
 
 #endif // PS_NO_BUILD
