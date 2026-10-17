@@ -55,8 +55,9 @@
 #define PS_AFTER_GOTO(stmnt, label)\
     PS_BLK(\
         PS_BLK(stmnt); \
-        goto (label);\
+        goto label;\
     )
+
 
 #define PS_VA_FIRST(X, ...) (X)
 #define PS_VA_REST(X, ...) (__VA_ARGS__)
