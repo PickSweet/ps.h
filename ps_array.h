@@ -24,14 +24,16 @@
 #define ps_darray_reserve(arr, new_capacity) \
     PS_BLK( \
         if ((arr)->capacity < (new_capacity)) { \
+            int target_capacity;\
             if((arr)->capacity == 0) { \
-                ps_darray_reserve_precise(arr, 1); \
-            } else { \
-                while (new_capacity > (arr)->capacity) { \
-                    (arr)->capacity *= 2; \
-                } \
-                ps_darray_reserve_precise(arr, (arr)->capacity); \
+                target_capacity = 1;\
+            } else {\
+                target_capacity = (arr)->capacity;\
+            }\
+            while (new_capacity > target_capacity) { \
+                target_capacity *= 2; \
             } \
+            ps_darray_reserve_precise(arr, target_capacity); \
         } \
     )
 
@@ -86,5 +88,9 @@
 
 #define ps_darray_foreach(T, it, arr) \
     for (T* it = (arr)->items; it < (arr)->items + (arr)->size; ++it)
+
+#define ps_darray_init_size(arr,size)\
+    ps_darray_resize(arr,size);\
+    PS_MEMSET((arr)->items,0,(size))
 
 #endif // PS_ARRAY_H
