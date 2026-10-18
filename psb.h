@@ -4,9 +4,6 @@
 #include "_ps.h"
 #include "ps_array.h"
 
-#define PSB_CMD_COMPLETE 0
-#define PSB_CMD_SKIP 1
-
 typedef struct psb_config_t {
     const char* root_dir;
 } psb_config_t;
@@ -91,7 +88,7 @@ PS_DEF int psb_run_(ps_graph_t *graph) {
     ps_darray_set(&states, 0, 1);
     ps_darray_append(&stack, ((psb_frame_t){ .node_idx = 0, .child_idx = 0 }));
 
-    int result = PSB_CMD_COMPLETE;
+    int result = 0;
     while (!ps_darray_is_empty(&stack)) {
         // Look at the top frame without popping it yet
         psb_frame_t *frame = &ps_darray_last(&stack);
@@ -123,7 +120,7 @@ PS_DEF int psb_run_(ps_graph_t *graph) {
             ps_darray_set(&states, completed_idx, 2);
             if (node->fn != NULL){
                 int res = node->fn(node->ctx);
-                if (res != PSB_CMD_COMPLETE && res != PSB_CMD_SKIP) {
+                if (res != 0) {
                     PS_AFTER_GOTO(
                         result = res;,
                         defer
