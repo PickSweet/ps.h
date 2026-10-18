@@ -1,7 +1,7 @@
-#ifndef PS_ARRAY_H
-#define PS_ARRAY_H
+#ifndef PSARRAY_H
+#define PSARRAY_H
 
-#include "_ps.h"
+#include "pscore.h"
 
 #define PS_DARRAY_T(T) \
     struct { \
@@ -93,4 +93,4 @@
     ps_darray_resize(arr,size);\
     PS_MEMSET((arr)->items,0,(size))
 
-#endif // PS_ARRAY_H
+#endif // PSARRAY_H

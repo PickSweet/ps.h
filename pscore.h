@@ -1,5 +1,5 @@
-#ifndef _PS_H
-#define _PS_H
+#ifndef PSCORE_H
+#define PSCORE_H
 
 #ifndef PS_DEF
 #define PS_DEF
@@ -68,4 +68,4 @@
 #define PS_VA_REST(X, ...) (__VA_ARGS__)
 
 
-#endif // _PS_H
+#endif // PSCORE_H

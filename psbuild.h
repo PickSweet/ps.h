@@ -1,8 +1,8 @@
-#ifndef PSB_H
-#define PSB_H
+#ifndef PSBUILD_H
+#define PSBUILD_H
 
-#include "_ps.h"
-#include "ps_array.h"
+#include "pscore.h"
+#include "psarray.h"
 
 typedef struct psb_config_t {
     const char* root_dir;
@@ -24,19 +24,19 @@ ps_idx_t psb_append_child_cmd_(ps_graph_t *graph, ps_idx_t parent, psb_fn_t fn, 
 void psb_free(ps_graph_t *graph);
 
 
-#define psb_append_child_cmd(graph, parent_idx, p_fn)\
+#define psb_graph_append_child_cmd(graph, parent_idx, p_fn)\
     psb_append_child_cmd_(graph,parent_idx,(psb_fn_t)(p_fn),NULL,0)
 
 
-#define psb_append_cmd(graph, p_fn)\
-    psb_append_child_cmd(graph,0,p_fn)
+#define psb_graph_append_cmd(graph, p_fn)\
+    psb_graph_append_child_cmd(graph,0,p_fn)
 
 
-#define psb_append_child_cmd_with_ctx(graph, parent_idx, p_fn, T, ...)\
-    psb_append_child_cmd_(graph, parent_idx, (psb_fn_t)(p_fn), ((void *)&((T){__VA_ARGS__})),sizeof(T))
+#define psb_graph_append_child_cmd_with_ctx(graph, parent_idx, p_fn, T, ...)\
+    psb_append_child_cmd_(graph, parent_idx, (psb_fn_t)(p_fn), (void *)&((T){__VA_ARGS__}),sizeof((T){__VA_ARGS__}))
 
-#define psb_append_cmd_with_ctx(graph,p_fn,T,...)\
-    psb_append_child_cmd_with_ctx(graph,0,p_fn,T,__VA_ARGS__)
+#define psb_graph_append_cmd_with_ctx(graph,p_fn,T,...)\
+    psb_graph_append_child_cmd_with_ctx(graph,0,p_fn,T,__VA_ARGS__)
 
 typedef struct psb_frame_t{
     ps_idx_t node_idx;
@@ -53,7 +53,7 @@ PS_DEF int psb_run_(ps_graph_t *graph);
     )
 
 
-#ifdef PSB_IMPLEMENTATION
+#ifdef PSBUILD_IMPLEMENTATION
 
 ps_idx_t psb_append_child_cmd_(ps_graph_t *graph, ps_idx_t parent, psb_fn_t fn, void *ctx,size_t ctx_size){
     void *ctx_cp = PS_REALLOC(NULL,ctx_size);
@@ -135,8 +135,22 @@ PS_DEF int psb_run_(ps_graph_t *graph) {
         return result;
 }
 
-#ifndef PSB_NO_BOILER
+#ifndef PSBUILD_NO_BOILER
+
 PS_DEF ps_graph_t psb_graph = {0};
+
+#define psb_append_child_cmd(parent_idx, p_fn)\
+    psb_graph_append_child_cmd(&psb_graph,parent_idx, p_fn)
+
+#define psb_append_cmd(p_fn)\
+    psb_graph_append_cmd(&psb_graph,p_fn)
+
+#define psb_append_child_cmd_with_ctx(parent_idx,p_fn,T, ...)\
+    psb_graph_append_child_cmd_with_ctx(&psb_graph,parent_idx, p_fn, T, __VA_ARGS__)
+
+#define psb_append_cmd_with_ctx(p_fn,T, ...)\
+    psb_graph_append_cmd_with_ctx(&psb_graph,p_fn, T, __VA_ARGS__)
+
 int build(int argc, char** argv);
 int main(int argc, char** argv) {
     ps_darray_append(&psb_graph,(ps_graph_node_t){0});
@@ -147,6 +161,6 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-#endif // PSB_NO_BUILD
-#endif // PSB_IMPLEMENTATION
-#endif // PSB_H
+#endif // PSBUILD_NO_BOILER
+#endif // PSBUILD_IMPLEMENTATION
+#endif // PSBUILD_H
