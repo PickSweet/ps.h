@@ -27,6 +27,11 @@
 #define PS_MEMCPY memcpy
 #endif // PS_MEMCPY
 
+#ifndef PS_MEMSET
+#include <string.h>
+#define PS_MEMSET memset
+#endif // PS_MEMSET
+
 #ifndef PS_ASSERT
 #include <assert.h>
 #define PS_ASSERT assert
