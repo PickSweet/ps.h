@@ -1,0 +1,155 @@
+#ifndef PSB_H
+#define PSB_H
+
+#include "_ps.h"
+#include "ps_array.h"
+
+#define PSB_CMD_COMPLETE 0
+#define PSB_CMD_SKIP 1
+
+typedef struct psb_config_t {
+    const char* root_dir;
+} psb_config_t;
+
+typedef int (*psb_fn_t)(void*);
+typedef size_t ps_idx_t;
+typedef struct ps_graph_node_t {
+    psb_fn_t fn;
+    void *ctx;
+    ps_idx_t parent;
+    PS_DARRAY_T(ps_idx_t) children;
+} ps_graph_node_t;
+
+
+typedef PS_DARRAY_T(ps_graph_node_t) ps_graph_t;
+
+ps_idx_t psb_append_child_cmd_(ps_graph_t *graph, ps_idx_t parent, psb_fn_t fn, void *ctx, size_t ctx_size);
+void psb_free(ps_graph_t *graph);
+
+
+#define psb_append_child_cmd(graph, parent_idx, p_fn)\
+    psb_append_child_cmd_(graph,parent_idx,(psb_fn_t)(p_fn),NULL,0)
+
+
+#define psb_append_cmd(graph, p_fn)\
+    psb_append_child_cmd(graph,0,p_fn)
+
+
+#define psb_append_child_cmd_with_ctx(graph, parent_idx, p_fn, T, ...)\
+    psb_append_child_cmd_(graph, parent_idx, (psb_fn_t)(p_fn), ((void *)&((T){__VA_ARGS__})),sizeof(T))
+
+#define psb_append_cmd_with_ctx(graph,p_fn,T,...)\
+    psb_append_child_cmd_with_ctx(graph,0,p_fn,T,__VA_ARGS__)
+
+typedef struct psb_frame_t{
+    ps_idx_t node_idx;
+    size_t child_idx; // Tracks which child we are currently visiting
+} psb_frame_t;
+
+typedef PS_DARRAY_T(psb_frame_t) psb_frame_stack; 
+
+PS_DEF int psb_run_(ps_graph_t *graph);
+
+#define psb_run(graph) \
+    PS_BLK( \
+        psb_run_((graph)); \
+    )
+
+
+#ifdef PSB_IMPLEMENTATION
+
+ps_idx_t psb_append_child_cmd_(ps_graph_t *graph, ps_idx_t parent, psb_fn_t fn, void *ctx,size_t ctx_size){
+    void *ctx_cp = PS_REALLOC(NULL,ctx_size);
+    PS_MEMCPY(ctx_cp,ctx,ctx_size);
+    ps_graph_node_t node = {0};
+    node.fn = fn;
+    node.ctx = ctx_cp;
+    node.parent = parent;
+    ps_darray_append(graph,node);
+    ps_idx_t new_idx = graph->size-1;
+    ps_darray_append(&(graph->items[parent].children),new_idx);
+    return  new_idx;
+}
+
+void psb_free(ps_graph_t *graph){
+    ps_darray_foreach(ps_graph_node_t,node,graph){
+        ps_darray_free(&node->children);
+        PS_FREE(node->ctx);
+        node->ctx = NULL;
+        node->fn = NULL;
+        node->parent = 0;
+    }
+}
+
+PS_DEF int psb_run_(ps_graph_t *graph) {
+    // Create a local dynamic array to act as our explicit stack
+    psb_frame_stack stack = {0};
+    PS_DARRAY_T(char) states = {0};
+    ps_darray_init_size(&states,graph->size);
+
+    // Push the root node (index 0) to start
+    ps_darray_set(&states, 0, 1);
+    ps_darray_append(&stack, ((psb_frame_t){ .node_idx = 0, .child_idx = 0 }));
+
+    int result = PSB_CMD_COMPLETE;
+    while (!ps_darray_is_empty(&stack)) {
+        // Look at the top frame without popping it yet
+        psb_frame_t *frame = &ps_darray_last(&stack);
+        ps_graph_node_t *node = &graph->items[frame->node_idx];
+
+        size_t num_children = node->children.size;
+
+        // 1. If there are unvisited children, push the next child onto the stack
+        if (frame->child_idx < num_children) {
+            ps_idx_t next_child_idx = node->children.items[frame->child_idx];
+            
+            // Advance parent's child index for the next iteration
+            frame->child_idx++;
+            if(ps_darray_get(&states, next_child_idx) == 1){
+                PS_AFTER_GOTO(
+                    result = -1;,
+                    defer
+                );
+            }
+            if (ps_darray_get(&states, next_child_idx) == 0){
+                ps_darray_set(&states, next_child_idx, 1);
+                ps_darray_append(&stack, ((psb_frame_t){ .node_idx = next_child_idx, .child_idx = 0 }));
+            }
+        } 
+        // 2. All children finished! Pop this frame and execute the node.
+        else {
+            ps_idx_t completed_idx = frame->node_idx;
+            ps_darray_pop(&stack); // Remove frame from stack
+            ps_darray_set(&states, completed_idx, 2);
+            if (node->fn != NULL){
+                int res = node->fn(node->ctx);
+                if (res != PSB_CMD_COMPLETE && res != PSB_CMD_SKIP) {
+                    PS_AFTER_GOTO(
+                        result = res;,
+                        defer
+                    );
+                }
+            }
+        }
+    }
+    defer:
+        ps_darray_free(&stack);
+        ps_darray_free(&states);
+        return result;
+}
+
+#ifndef PSB_NO_BOILER
+PS_DEF ps_graph_t psb_graph = {0};
+int build(int argc, char** argv);
+int main(int argc, char** argv) {
+    ps_darray_append(&psb_graph,(ps_graph_node_t){0});
+    int result = build(argc,argv);
+    if(result) return 1;
+    psb_run(&psb_graph);
+    psb_free(&psb_graph);
+    return 0;
+}
+
+#endif // PSB_NO_BUILD
+#endif // PSB_IMPLEMENTATION
+#endif // PSB_H
