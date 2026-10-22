@@ -29,17 +29,17 @@
 
 #define ps_view_copy_to_mem_with_sentinal(view, mem, sentinal)\
     PS_BLK(\
-        PS_MEMCPY((typeof((view)->data))(mem), (view), (view)->size);\
+        PS_MEMCPY((typeof((view)->data))(mem), (view)->data, (view)->size);\
         ((typeof((view)->data))(mem))[(view)->size] = sentinal;\
     )
 
 #define ps_view_copy_to_mem(view, mem)\
     PS_BLK(\
-        PS_MEMCPY((typeof((view)->data))mem, (view), (view)->size);\
+        PS_MEMCPY((typeof((view)->data))mem, (view)->data, (view)->size);\
     )
 
-int ps_memcompare(void* a, void* b, size_t size);
-size_t ps_memlen_(const void *mem, void* sentinal, size_t element_size);
+int ps_memcompare(const void *const  a, const void *const b, const size_t size);
+size_t ps_memlen_(const void *const mem, const void *const sentinal, const size_t element_size);
 
 #define ps_memlen(mem,sentinal)\
     ps_memlen_((void*)(mem), (void*)((sentinal)), sizeof(*(mem)))
@@ -52,7 +52,7 @@ size_t ps_memlen_(const void *mem, void* sentinal, size_t element_size);
 
 #ifdef PSVIEW_IMPLEMENTATION
 
-int ps_memcompare(void* a, void* b, size_t size){
+int ps_memcompare(const void *const a, const void *const b, const size_t size){
     const char *ba = (const char*)a;
     const char *bb = (const char*)b;
     size_t i = size - 1;
@@ -62,17 +62,29 @@ int ps_memcompare(void* a, void* b, size_t size){
     return 1;
 }
 
-size_t ps_memlen_(const void *mem, void* sentinal, size_t element_size){
-    char* element_bytes = PS_REALLOC(NULL, element_size);
+#ifndef PSVIEW_MEMLEN_BUFFER_SIZE
+#define PSVIEW_MEMLEN_BUFFER_SIZE 64
+#endif
+
+size_t ps_memlen_(const void *const mem, const void* const sentinal, const size_t element_size){
+    char buffer[PSVIEW_MEMLEN_BUFFER_SIZE];
+    char* element_bytes = buffer;
+    int on_heap = 0;
     size_t i = 0;
     const char *bytes = (const char *)mem;
+    if (element_size > PSVIEW_MEMLEN_BUFFER_SIZE){
+        element_bytes = PS_REALLOC(NULL,element_size);
+        on_heap = 1;
+    }
     PS_MEMCPY(element_bytes, bytes, element_size);
     while (!ps_memcompare(element_bytes,sentinal,element_size)){
         bytes += element_size;
         PS_MEMCPY(element_bytes, bytes, element_size);
         i++;
     }
-    PS_FREE(element_bytes);
+    if (on_heap){
+        PS_FREE(element_bytes);
+    }
     return i;
 }
 
