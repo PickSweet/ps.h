@@ -11,8 +11,7 @@ typedef struct psb_config_t {
 typedef int (*psb_fn_t)(void*);
 typedef size_t ps_idx_t;
 typedef struct ps_graph_node_t {
-    psb_fn_t fn;
-    void *ctx;
+    PS_CLOSURE_T(int, void) closure;
     ps_idx_t parent;
     PS_DARRAY_T(ps_idx_t) children;
 } ps_graph_node_t;
@@ -59,8 +58,8 @@ ps_idx_t psb_append_child_cmd_(ps_graph_t *graph, ps_idx_t parent, psb_fn_t fn, 
     void *ctx_cp = PS_REALLOC(NULL,ctx_size);
     PS_MEMCPY(ctx_cp,ctx,ctx_size);
     ps_graph_node_t node = {0};
-    node.fn = fn;
-    node.ctx = ctx_cp;
+    node.closure.fn = fn;
+    node.closure.ctx = ctx_cp;
     node.parent = parent;
     ps_darray_append(graph,node);
     ps_idx_t new_idx = graph->size-1;
@@ -71,11 +70,12 @@ ps_idx_t psb_append_child_cmd_(ps_graph_t *graph, ps_idx_t parent, psb_fn_t fn, 
 void psb_free(ps_graph_t *graph){
     ps_darray_foreach(ps_graph_node_t,node,graph){
         ps_darray_free(&node->children);
-        PS_FREE(node->ctx);
-        node->ctx = NULL;
-        node->fn = NULL;
+        PS_FREE(node->closure.ctx);
+        node->closure.ctx = NULL;
+        node->closure.fn = NULL;
         node->parent = 0;
     }
+    ps_darray_free(graph);
 }
 
 PS_DEF int psb_run_(ps_graph_t *graph) {
@@ -118,8 +118,8 @@ PS_DEF int psb_run_(ps_graph_t *graph) {
             ps_idx_t completed_idx = frame->node_idx;
             ps_darray_pop(&stack); // Remove frame from stack
             ps_darray_set(&states, completed_idx, 2);
-            if (node->fn != NULL){
-                int res = node->fn(node->ctx);
+            if (node->closure.fn != NULL){
+                int res = node->closure.fn(node->closure.ctx);
                 if (res != 0) {
                     PS_AFTER_GOTO(
                         result = res;,
@@ -137,7 +137,16 @@ PS_DEF int psb_run_(ps_graph_t *graph) {
 
 #ifndef PSBUILD_NO_BOILER
 
+#define PSLOG_IMPLEMENTATION
+#include "pslog.h"
+
+#ifndef PSB_TEMP_SIZE
+#define PSB_TEMP_SIZE 1024*1024
+#endif // PSB_TEMP_SIZE
+
 PS_DEF ps_graph_t psb_graph = {0};
+PS_DEF PS_DARRAY_T(char) psb_temp;
+PS_DEF PS_DARRAY_T(size_t) psb_temp_marks;
 
 #define psb_append_child_cmd(parent_idx, p_fn)\
     psb_graph_append_child_cmd(&psb_graph,parent_idx, p_fn)
@@ -153,6 +162,7 @@ PS_DEF ps_graph_t psb_graph = {0};
 
 int build(int argc, char** argv);
 int main(int argc, char** argv) {
+    ps_darray_reserve_precise(&psb_temp, PSB_TEMP_SIZE);
     ps_darray_append(&psb_graph,(ps_graph_node_t){0});
     int result = build(argc,argv);
     if(result) return 1;
@@ -160,6 +170,50 @@ int main(int argc, char** argv) {
     psb_free(&psb_graph);
     return 0;
 }
+
+void psb_temp_mark(){
+    ps_darray_append(&psb_temp_marks, psb_temp.size);
+}
+
+void psb_temp_unmark(){
+    size_t mark = ps_darray_pop(&psb_temp_marks);
+    ps_darray_resize(&psb_temp, mark);
+}
+
+int psb_shell_cmd_fn(const char **ctx) {
+    psb_temp_mark();
+
+    
+    size_t start_offset = ps_darray_last(&psb_temp_marks);
+
+    const char **p = ctx;
+    while (*p != NULL) {
+        size_t len = strlen(*p);
+        if (psb_temp.size > start_offset) {
+            ps_darray_append(&psb_temp, ' ');
+        }
+        ps_darray_append_many(&psb_temp, *p, len);
+        p++;
+    }
+    ps_darray_append(&psb_temp, '\0');
+
+    // Get a pointer to our freshly built command string in the arena
+    char *cmd = &ps_darray_get(&psb_temp,start_offset);
+
+    ps_log(PS_LOG_INFO, "Running: %s\n", cmd);
+    int ret = system(cmd);
+
+    // Wipe away everything we allocated for this command instantly
+    psb_temp_unmark();
+
+    return ret;
+}
+
+#define psb_append_shell_cmd(arg1,...)\
+    psb_append_cmd_with_ctx(psb_shell_cmd_fn, const char *[], arg1, ##__VA_ARGS__,NULL)
+
+#define psb_append_child_shell_cmd(parent_idx, ...)\
+    psb_append_child_cmd_with_ctx(parent_idx, psb_shell_cmd_fn, const char*[], ##__VA_ARGS__, NULL)
 
 #endif // PSBUILD_NO_BOILER
 #endif // PSBUILD_IMPLEMENTATION
