@@ -67,5 +67,10 @@
 #define PS_VA_FIRST(X, ...) (X)
 #define PS_VA_REST(X, ...) (__VA_ARGS__)
 
+#define PS_CLOSURE_T(R,T)\
+    struct {\
+        R(*fn)(T*);\
+        void *ctx;\
+    }
 
 #endif // PSCORE_H
