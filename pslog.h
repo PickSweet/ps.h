@@ -2,8 +2,10 @@
 #define PSLOG_H
 
 #include "pscore.h"
+#include "psview.h"
 
 #include <stdarg.h>
+#include <stdio.h>
 
 typedef unsigned char ps_log_level_e;
 #define PS_LOG_NONE 0x00
@@ -34,7 +36,7 @@ PS_DEF void ps_log_level_enable(ps_log_level_e levels);
 PS_DEF void ps_log_level_toggle(ps_log_level_e levels);
 
 PS_DEF void ps_set_log_handler(ps_log_handler *handler);
-PS_DEF ps_log_handler *sp_get_log_handler(void);
+PS_DEF ps_log_handler *ps_get_log_handler(void);
 
 PS_DEF ps_log_handler ps_default_log_handler;
 
@@ -45,8 +47,6 @@ PS_DEF const char *ps_log_level_prefixes[8] = {"[INFO]", "[WARNING]", "[ERROR]",
 PS_DEF unsigned char _ps_get_log_level_index(ps_log_level_e level);
 PS_DEF void ps_set_log_prefix(ps_log_level_e level, const char *prefix);
 PS_DEF const char *ps_get_log_prefix(ps_log_level_e level);
-
-#define PSLOG_IMPLEMENTATION
 
 #ifdef PSLOG_IMPLEMENTATION
 
@@ -85,7 +85,7 @@ PS_DEF unsigned char _ps_get_log_level_index(ps_log_level_e level){
     unsigned char idx = 0;
     ps_log_level_e l = level;
     if (l == 0) return 0xFF;
-    while(l >> 1) idx++;
+    while(l >>= 1) idx++;
     return idx;
 }
 
@@ -102,10 +102,16 @@ PS_DEF const char *ps_get_log_prefix(ps_log_level_e level){
 PS_DEF void ps_default_log_handler(ps_log_level_e level, const char* fmt, va_list args){
     ps_log_level_e reporting_level = ps_log_levels_enabled & level;
     const char* prefix = ps_get_log_prefix(reporting_level);
+    FILE *out = stdout;
+    if( level & (PS_LOG_WARNING | PS_LOG_ERROR)){
+        out = stderr;
+    }
     if (prefix == NULL){
         prefix = "[LOG]";
     }
-    
+    fprintf(out, "%s ", prefix);
+    vfprintf(out, fmt, args);
+    fflush(out);
 }
 
 
