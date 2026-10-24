@@ -2,7 +2,6 @@
 #define PSLOG_H
 
 #include "pscore.h"
-#include "psview.h"
 
 #include <stdarg.h>
 #include <stdio.h>
