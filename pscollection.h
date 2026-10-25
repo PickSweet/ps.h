@@ -6,32 +6,42 @@
 #define PS_ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
 typedef struct ps_slice_info_t {
-    size_t width;
     size_t size;
-    char *ptr;
+    void *ptr;
 } ps_slice_info_t;
 
-typedef char** slice_t;
+#define ps_slice_size(slice) (((size_t*)(slice))[-1])
+#define ps_slice_ptr(slice) (*(slice))
 
-#define ps_slice(data, size)\
-    (void*)(&(ps_slice_info_t){\
-        sizeof(*(data)),\
+#define ps_slice_init(data, size)\
+    (PS_TYPEOF((data))*)(&(ps_slice_info_t){\
         size,\
-        (char*)((void*)data)\
+        (void*)(data)\
     }.ptr)
 
-#define ps_list(T)\
-    (T**)(&(ps_list_info_t){0}.ptr)
+static PS_INLINE ps_slice_info_t *ps_slice_info_new(void){
+    ps_slice_info_t *info = (ps_slice_info_t*)PS_REALLOC(NULL, sizeof(ps_slice_info_t));
+    PS_ASSERT(info != NULL && "Failed to allocate memory for slice info");
+    info->size = 0;
+    info->ptr = 0;
+    return info;
+}
 
-#define ps_slice_width(slice) (((size_t*)(slice))[-2])
-#define ps_slice_size(slice) (((size_t*)(slice))[-1])
-#define ps_slice_ptr(slice) (*(slice_t)(slice))
+#define ps_slice_new(T) ((T**)&(ps_slice_info_new()->ptr))
+
+#define ps_slice_free(slice)\
+    PS_BLK(\
+        if ((slice) != NULL) {\
+            PS_FREE(((size_t*)(slice)) - 1);\
+            *(slice) = NULL;\
+        }\
+    )
 
 #define ps_slice_skip(slice,n)\
     PS_BLK(\
         size_t _n = (n);\
         PS_ASSERT((_n <= ps_slice_size(slice)) && "Out of bounds!");\
-        ps_slice_ptr(slice) += _n * ps_slice_width(slice);\
+        ps_slice_ptr(slice) += _n;\
         ps_slice_size(slice) -= n;\
     )
 
@@ -42,31 +52,24 @@ typedef char** slice_t;
         ps_slice_size(slice) -= _n;\
     )
 
-#define ps_slice_foreach(iter, slice)\
-    for (\
-        char* iter = ps_slice_ptr(slice);\
-        iter < ps_slice_ptr(slice) + (ps_slice_width(slice) * ps_slice_size(slice));\
-        iter += ps_slice_width(slice))
 
-
-#define ps_slice_get_ptr(slice, idx)\
-    (void*)(\
-        PS_ASSERT((idx) < ps_slice_size(slice) && "Out of bounds!"),\
-        ps_slice_ptr(slice) + ((idx) * ps_slice_width(slice))\
-    )
-
-#define ps_slice_get(slice, idx, T)\
-    *((T*)ps_slice_get_ptr(slice,idx))
-
-#define ps_slice_is_empty(slice)\
-    (ps_slice_size(slice) == 0)
+#define ps_slice_first(slice) (ps_slice_ptr(slice)[PS_ASSERT(ps_slice_size(slice) > 0), 0])
+#define ps_slice_last(slice) (ps_slice_ptr(slice)[PS_ASSERT(ps_slice_size(slice) > 0), ps_slice_size(slice) - 1])
+#define ps_slice_get(slice, index) (ps_slice_ptr(slice)[PS_ASSERT((index) < ps_slice_size(slice) && "Index out of bounds!"), (index)])
+#define ps_slice_set(slice, index, value) (ps_slice_get(slice,index) = (value))
 
 #define ps_slice_sub(slice, start, end)\
     (void*)(&(ps_slice_info_t){\
-        ps_slice_width(slice),\
         (end) - (start),\
-        ps_slice_ptr(slice) + ((start) * ps_slice_width(slice))\
+        (void*)(ps_slice_ptr(slice) + (start)),\
     }.ptr)
+
+#define ps_slice_foreach(slice, iter)\
+    for (\
+        PS_TYPEOF(ps_slice_ptr(slice)) iter = ps_slice_ptr(slice);\
+        iter < ps_slice_ptr(slice) + ps_slice_size(slice);\
+        ++iter\
+    )
 
 typedef struct ps_list_info_t {
     size_t capacity;
