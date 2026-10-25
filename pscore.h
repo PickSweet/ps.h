@@ -1,6 +1,11 @@
 #ifndef PSCORE_H
 #define PSCORE_H
 
+#define CONCAT_(a, b, ...) a ## b
+#define CONCAT(a,...) CONCAT_(a,__VA_ARGS__)
+#define STRINGIFY_(a) #a
+#define STRINGIFY(a, ...) STRINGIFY_(a)
+
 #ifndef PS_DEF
 #define PS_DEF
 #endif // PS_DEF
@@ -11,6 +16,17 @@
 #define PS_DECLTYPE_CAST(T)
 #endif // PS_DECLTYPE_CAST
 
+#ifdef __cplusplus
+#define PS_TYPEOF typeof
+#else
+#define PS_TYPEOF(...) __typeof__(__VA_ARGS__)
+#endif // PS_TYPEOF
+
+#ifdef __cplusplus
+#define PS_INLINE inline
+#else
+#define PS_INLINE __inline
+#endif // PS_INLINE
 
 #ifndef PS_REALLOC
 #include <stdlib.h>
@@ -37,11 +53,8 @@
 #define PS_ASSERT assert
 #endif // PS_ASSERT
 
-
-#define PS_BLK(stmnt)\
-    do { \
-        stmnt \
-    } while (0)
+#define PS_BLK(...)\
+    do {__VA_ARGS__} while (0)
 
 #ifndef PS_UNUSED
 #define PS_UNUSED(x) (void)(x)
@@ -68,5 +81,6 @@
         R(*fn)(T*);\
         void *ctx;\
     }
+
 
 #endif // PSCORE_H
