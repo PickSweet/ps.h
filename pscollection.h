@@ -3,135 +3,200 @@
 
 #include "pscore.h"
 
-#define PS_LIST_T(T) \
-    struct { \
-        T* items; \
-        size_t size; \
-        size_t capacity; \
-    }
+#define PS_ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
-#define PS_SLICE_T(T)\
-    struct {\
-        T* items;\
-        size_t size;\
-    }
+typedef struct ps_slice_info_t {
+    size_t width;
+    size_t size;
+    char *ptr;
+} ps_slice_info_t;
 
-#define PS_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+typedef char** slice_t;
 
-#define ps_list_reserve_precise(list, new_capacity) \
-    PS_BLK( \
-        if ((list)->capacity < (new_capacity)) { \
-            (list)->items = PS_DECLTYPE_CAST((list)->items)(PS_REALLOC((list)->items, (new_capacity) * sizeof(*(list)->items))); \
-            (list)->capacity = (new_capacity); \
-            PS_ASSERT((list)->items != NULL && "Failed to reallocate memory for list"); \
-        } \
+#define ps_slice(data, size)\
+    (void*)(&(ps_slice_info_t){\
+        sizeof(*(data)),\
+        size,\
+        (char*)((void*)data)\
+    }.ptr)
+
+#define ps_list(T)\
+    (T**)(&(ps_list_info_t){0}.ptr)
+
+#define ps_slice_width(slice) (((size_t*)(slice))[-2])
+#define ps_slice_size(slice) (((size_t*)(slice))[-1])
+#define ps_slice_ptr(slice) (*(slice_t)(slice))
+
+#define ps_slice_skip(slice,n)\
+    PS_BLK(\
+        size_t _n = (n);\
+        PS_ASSERT((_n <= ps_slice_size(slice)) && "Out of bounds!");\
+        ps_slice_ptr(slice) += _n * ps_slice_width(slice);\
+        ps_slice_size(slice) -= n;\
     )
 
-#define ps_list_reserve(list, new_capacity) \
-    PS_BLK( \
-        if ((list)->capacity < (new_capacity)) { \
-            int target_capacity;\
-            if((list)->capacity == 0) { \
+#define ps_slice_shrink(slice,n)\
+    PS_BLK(\
+        size_t _n = (n);\
+        PS_ASSERT((_n <= ps_slice_size(slice)) && "Out of bounds!");\
+        ps_slice_size(slice) -= _n;\
+    )
+
+#define ps_slice_foreach(iter, slice)\
+    for (\
+        char* iter = ps_slice_ptr(slice);\
+        iter < ps_slice_ptr(slice) + (ps_slice_width(slice) * ps_slice_size(slice));\
+        iter += ps_slice_width(slice))
+
+
+#define ps_slice_get_ptr(slice, idx)\
+    (void*)(\
+        PS_ASSERT((idx) < ps_slice_size(slice) && "Out of bounds!"),\
+        ps_slice_ptr(slice) + ((idx) * ps_slice_width(slice))\
+    )
+
+#define ps_slice_get(slice, idx, T)\
+    *((T*)ps_slice_get_ptr(slice,idx))
+
+#define ps_slice_is_empty(slice)\
+    (ps_slice_size(slice) == 0)
+
+#define ps_slice_sub(slice, start, end)\
+    (void*)(&(ps_slice_info_t){\
+        ps_slice_width(slice),\
+        (end) - (start),\
+        ps_slice_ptr(slice) + ((start) * ps_slice_width(slice))\
+    }.ptr)
+
+typedef struct ps_list_info_t {
+    size_t capacity;
+    size_t size;
+    void *ptr;
+} ps_list_info_t;
+
+#define ps_list_capacity(list) (((size_t*)(list))[-2])
+#define ps_list_size(list) (((size_t*)(list))[-1])
+#define ps_list_ptr(list) (*(list))
+
+#define ps_list_init(T)\
+    (T**)(&(ps_list_info_t){0}.ptr)
+
+static PS_INLINE ps_list_info_t *ps_list_info_new(void){
+    ps_list_info_t *info = (ps_list_info_t*)PS_REALLOC(NULL, sizeof(ps_list_info_t));
+    PS_ASSERT(info != NULL && "Failed to allocate memory for list info");
+    info->capacity = 0;
+    info->size = 0;
+    info->ptr = 0;
+    return info;
+}
+
+#define ps_list_new(T) ((T**)&(ps_list_info_new()->ptr))
+
+#define ps_list_info_free(list)\
+    PS_BLK(\
+        if ((list) != NULL && ps_list_ptr(list) != NULL) {\
+            PS_FREE(ps_list_ptr(list));\
+            ps_list_ptr(list) = NULL;\
+            ps_list_capacity(list) = 0;\
+            ps_list_size(list) = 0;\
+        }\
+    )
+
+#define ps_list_free(list)\
+    PS_BLK(\
+        if ((list) != NULL) {\
+            ps_list_info_free(list);\
+            PS_FREE(((size_t*)(list)) - 2);\
+            *(list) = NULL;\
+        }\
+    )
+
+#define ps_list_reserve_precise(list, new_capacity)\
+    PS_BLK(\
+        if (ps_list_capacity(list) < (new_capacity)){\
+            void *_new_ptr = PS_REALLOC(ps_list_ptr(list), (new_capacity) * sizeof(*ps_list_ptr(list)));\
+            PS_ASSERT(_new_ptr != NULL && "Failed to reallocate memory for list!");\
+            ps_list_ptr(list) = PS_DECLTYPE_CAST(ps_list_ptr(list))(_new_ptr);\
+            ps_list_capacity(list) = (new_capacity);\
+        }\
+    )
+
+#define ps_list_reserve(list, new_capacity)\
+    PS_BLK(\
+        size_t *list_capacity_ptr = &ps_list_capacity(list);\
+        if (*list_capacity_ptr < (new_capacity)){\
+            size_t target_capacity;\
+            if (*list_capacity_ptr == 0){\
                 target_capacity = 1;\
             } else {\
-                target_capacity = (list)->capacity;\
+                target_capacity = *list_capacity_ptr;\
             }\
-            while (new_capacity > target_capacity) { \
-                target_capacity *= 2; \
-            } \
-            ps_list_reserve_precise(list, target_capacity); \
-        } \
+            while (new_capacity > target_capacity){\
+                target_capacity *= 2;\
+            }\
+            ps_list_reserve_precise(list, target_capacity);\
+        }\
     )
 
-#define ps_list_free(list) \
-    PS_BLK( \
-        PS_FREE((list)->items); \
-        (list)->items = NULL; \
-        (list)->size = 0; \
-        (list)->capacity = 0; \
-    )
-
-#define ps_list_resize(list, new_size) \
-    PS_BLK( \
-        ps_list_reserve(list, (new_size)); \
-        (list)->size = (new_size); \
-    )
-
-#define ps_list_append(list, value) \
-    PS_BLK( \
-        ps_list_reserve(list, (list)->size + 1); \
-        (list)->items[(list)->size++] = (value); \
-    )
-
-#define ps_list_append_many(list, values, count) \
-    PS_BLK( \
-        ps_list_reserve(list, (list)->size + (count)); \
-        PS_MEMCPY(&(list)->items[(list)->size], (values), (count) * sizeof(*(list)->items)); \
-        (list)->size += (count); \
-    )
-
-#define ps_list_pop(list) (list)->items[PS_ASSERT((list)->size > 0), --(list)->size]
-#define ps_slice_pop(slice) ps_list_pop(slice)
-#define ps_list_first(list) (list)->items[PS_ASSERT((list)->size > 0), 0]
-#define ps_slice_first(slice) ps_list_first(slice)
-#define ps_list_last(list) (list)->items[PS_ASSERT((list)->size > 0), (list)->size - 1]
-#define ps_slice_last(slice) ps_list_last(slice)
-#define ps_list_get(list, index) (list)->items[PS_ASSERT((index) < (list)->size && "Index out of bounds."), (index)]
-#define ps_slice_get(slice, index) ps_list_get(slice,index)
-#define ps_list_set(list, index, value) \
-    PS_BLK( \
-        PS_ASSERT((index) < (list)->size && "Index out of bounds"); \
-        (list)->items[(index)] = (value); \
-    )
-#define ps_slice_set(slice, index, value) ps_list_set(slice, index, value)
-#define ps_list_unordered_remove(list, index) \
-    PS_BLK( \
-        PS_ASSERT((index) < (list)->size && "Index out of bounds"); \
-        (list)->items[(index)] = (list)->items[--(list)->size]; \
-    )
-
-#define ps_list_clear(list) \
-    PS_BLK( \
-        (list)->size = 0; \
-    )
-
-#define ps_list_is_empty(list) ((list)->size == 0)
-#define ps_slice_is_empty(slice) ps_list_is_empty(slice)
-
-#define ps_list_foreach(T, it, list) \
-    for (T* it = (list)->items; it < (list)->items + (list)->size; ++it)
-
-#define ps_slice_foreach(T, it, slice) ps_list_foreach(T, it, slice)
-
-#define ps_list_init_with_size(list,size)\
-    ps_list_resize(list,size);\
-    PS_MEMSET((list)->items,0,sizeof(*(list)->items) * (size))
-
-#define ps_list_slice(list, start, len) \
-    ( \
-        PS_ASSERT((start) + (len) <= (list)->size && "Out of bounds."), \
-        (PS_SLICE_T(typeof(*(list)->items))){ (list)->items + (start), (len) } \
-    )
-
-#define ps_array_slice(arr, start, len)\
-    (PS_SLICE_T(typeof(*(arr)))){arr + (start), (len)}
-
-#define ps_slice_slice(slice, start, len) ps_list_slice(slice, start, len)
-
-
-#define ps_slice_skip(slice, n)\
+#define ps_list_resize(list, new_size)\
     PS_BLK(\
-        size_t N = n;\
-        if (N > (slice)->size) N = (slice)->size;\
-        (slice)->items += N;\
-        (slice)->size -= N;\
+        ps_list_reserve(list, new_size);\
+        ps_list_size(list) = (new_size);\
     )
 
-#define ps_slice_shrink(slice, n)\
+#define ps_list_append_one(list, value)\
     PS_BLK(\
-        size_t N = n;\
-        if( N > (slice)->size) N = (slice)->size;\
-        (slice)->size -= N;\
+        ps_list_reserve(list, ps_list_size(list) + 1);\
+        ps_list_ptr(list)[ps_list_size(list)] = (value);\
+        ps_list_size(list)++;\
+    )
+#define ps_list_append_many(list, values, count)\
+    PS_BLK(\
+        PS_ASSERT(sizeof((values)[0]) == sizeof(*ps_list_ptr(list)) && "Appending values to list of incompatible type.");\
+        ps_list_reserve(list,ps_list_size(list) + (count));\
+        PS_MEMCPY(ps_list_ptr(list) + ps_list_size(list), values, (count) * sizeof(*ps_list_ptr(list)));\
+        ps_list_size(list)+=(count);\
+    )
+
+#define ps_list_append_array(list,array)\
+    ps_list_append_many(list, array, PS_ARRAY_SIZE(array))
+
+#define ps_list_append_list(list_a,list_b)\
+    ps_list_append_many(list_a, ps_list_ptr(list_b), ps_list_size(list_b))
+
+#define ps_list_append(list, ...)\
+    PS_BLK(\
+        PS_TYPEOF(*ps_list_ptr(list)) values[] = {__VA_ARGS__};\
+        ps_list_append_array(list, values);\
+    )
+
+#define ps_list_pop(list) (ps_list_ptr(list)[PS_ASSERT(ps_list_size(list) > 0), --ps_list_size(list)])
+#define ps_list_first(list) (ps_list_ptr(list)[PS_ASSERT(ps_list_size(list) > 0), 0])
+#define ps_list_last(list) (ps_list_ptr(list)[PS_ASSERT(ps_list_size(list) > 0), ps_list_size(list) - 1])
+#define ps_list_get(list, index) (ps_list_ptr(list)[PS_ASSERT((index) < ps_list_size(list) && "Index out of bounds!"), (index)])
+#define ps_list_set(list, index, value) (ps_list_get(list,index) = (value))
+
+#define ps_list_swap_and_pop(list, index, out)\
+    PS_BLK(\
+        (out) = ps_list_get(list, index);\
+        ps_list_get(list,index) = ps_list_get(ps_list_size(list) - 1);\
+        ps_list_size(list)--;\
+    )
+
+#define ps_list_unordered_remove(list, index)\
+    PS_BLK(\
+        PS_TYPEOF(*ps_list_ptr(list)) out;\
+        ps_list_swap_and_pop(list, index, out);\
+    )
+
+#define ps_list_clear(list) ps_list_size(list) = 0
+#define ps_list_is_empty(list) (ps_list_size(list) == 0)
+
+#define ps_list_foreach(list, iter)\
+    for (\
+        PS_TYPEOF(ps_list_ptr(list)) iter = ps_list_ptr(list);\
+        iter < ps_list_ptr(list) + ps_list_size(list);\
+        ++iter\
     )
 
 #endif // PSCOLLECTION_H
