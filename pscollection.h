@@ -10,6 +10,8 @@ typedef struct ps_slice_info_t {
     void *ptr;
 } ps_slice_info_t;
 
+#define ps_slice_t(T) T**
+
 #define ps_slice_size(slice) (((size_t*)(slice))[-1])
 #define ps_slice_ptr(slice) (*(slice))
 
@@ -76,6 +78,8 @@ typedef struct ps_list_info_t {
     size_t size;
     void *ptr;
 } ps_list_info_t;
+
+#define ps_list_t(T) T**
 
 #define ps_list_capacity(list) (((size_t*)(list))[-2])
 #define ps_list_size(list) (((size_t*)(list))[-1])
