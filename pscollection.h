@@ -1,3 +1,27 @@
+/*
+MIT License
+
+Copyright (c) 2026 David J. Meagher
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+*/
+
 #ifndef PSCOLLECTION_H
 #define PSCOLLECTION_H
 
@@ -87,17 +111,6 @@ typedef struct ps_list_info_t {
 
 #define ps_list_init(T)\
     (T**)(&(ps_list_info_t){0}.ptr)
-
-static PS_INLINE ps_list_info_t *ps_list_info_new(void){
-    ps_list_info_t *info = (ps_list_info_t*)PS_REALLOC(NULL, sizeof(ps_list_info_t));
-    PS_ASSERT(info != NULL && "Failed to allocate memory for list info");
-    info->capacity = 0;
-    info->size = 0;
-    info->ptr = 0;
-    return info;
-}
-
-#define ps_list_new(T) ((T**)&(ps_list_info_new()->ptr))
 
 #define ps_list_info_free(list)\
     PS_BLK(\
@@ -205,5 +218,26 @@ static PS_INLINE ps_list_info_t *ps_list_info_new(void){
         iter < ps_list_ptr(list) + ps_list_size(list);\
         ++iter\
     )
+
+static PS_INLINE ps_list_info_t *ps_list_info_new(const void *data, size_t size){
+    ps_list_info_t *info = (ps_list_info_t*)PS_REALLOC(NULL, sizeof(ps_list_info_t));
+    PS_ASSERT(info != NULL && "Failed to allocate memory for list info");
+    info->capacity = 0;
+    info->size = 0;
+    info->ptr = NULL;
+    if (data != NULL && size > 0){
+        ps_list_append_many(&info->ptr, data, size);
+    }
+    return info;
+}
+
+#define ps_list_new(T) \
+    ((T**)&(ps_list_info_new(NULL, 0)->ptr))
+
+#define ps_list_new_with_data(T, ...) \
+    ((T**)&(ps_list_info_new(\
+        (T[]){__VA_ARGS__}, \
+        sizeof((T[]){__VA_ARGS__}) / sizeof(T)\
+    )->ptr))
 
 #endif // PSCOLLECTION_H
