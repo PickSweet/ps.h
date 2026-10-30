@@ -47,7 +47,7 @@ PS_DEF unsigned char _ps_get_log_level_index(ps_log_level_e level);
 PS_DEF void ps_set_log_prefix(ps_log_level_e level, const char *prefix);
 PS_DEF const char *ps_get_log_prefix(ps_log_level_e level);
 
-#ifdef PSLOG_IMPLEMENTATION
+#ifdef PSLOG_IMP
 
 PS_DEF void ps_log_level_disable(ps_log_level_e levels){
     ps_log_levels_enabled &= (~levels);
@@ -114,6 +114,6 @@ PS_DEF void ps_default_log_handler(ps_log_level_e level, const char* fmt, va_lis
 }
 
 
-#endif // PSLOG_IMPLEMENTATION
+#endif // PSLOG_IMP
 
 #endif // PSLOG_H
