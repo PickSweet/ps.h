@@ -246,8 +246,6 @@ static PS_INLINE ps_list_info_t *ps_list_info_new(const void *data, size_t size)
 static PS_INLINE void ps_list_append_fmt_internal(char ***list_ptr, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-
-    // 1. Determine required length using a copy of va_list
     va_list args_copy;
     va_copy(args_copy, args);
     int len = vsnprintf(NULL, 0, fmt, args_copy);
@@ -256,20 +254,11 @@ static PS_INLINE void ps_list_append_fmt_internal(char ***list_ptr, const char *
     if (len > 0) {
         char **list = *list_ptr;
         size_t old_size = ps_list_size(list);
-
-        // If the list is already null-terminated, step back so we overwrite the '\0' 
-        // and keep the string continuously growing.
         if (old_size > 0 && ps_list_ptr(list)[old_size - 1] == '\0') {
             old_size--;
         }
-
-        // 2. Reserve space for the new text + null terminator
         ps_list_reserve(list, old_size + len + 1);
-
-        // 3. Format directly into the list's buffer at the end
         vsnprintf(ps_list_ptr(list) + old_size, len + 1, fmt, args);
-
-        // 4. Update size to include the new null terminator
         ps_list_size(list) = old_size + len + 1;
     }
 
