@@ -40,6 +40,7 @@ typedef struct ps_slice_info_t {
 
 #define ps_slice_size(slice) (((size_t*)(slice))[-1])
 #define ps_slice_ptr(slice) (*(slice))
+#define ps_slice_info(slice) (*(ps_slice_info_t*)(ps_slice_size(slice)))
 
 #define ps_slice_init(data, size)\
     (PS_TYPEOF((data))*)(&(ps_slice_info_t){\
@@ -47,15 +48,16 @@ typedef struct ps_slice_info_t {
         (void*)(data)\
     }.ptr)
 
-static PS_INLINE ps_slice_info_t *ps_slice_info_new(void){
+
+static PS_INLINE ps_slice_info_t *ps_slice_info_new(void *data, size_t size){
     ps_slice_info_t *info = (ps_slice_info_t*)PS_REALLOC(NULL, sizeof(ps_slice_info_t));
     PS_ASSERT(info != NULL && "Failed to allocate memory for slice info");
-    info->size = 0;
-    info->ptr = 0;
+    info->size = size;
+    info->ptr = data;
     return info;
 }
 
-#define ps_slice_new(T) ((T**)&(ps_slice_info_new()->ptr))
+#define ps_slice_new(T, data, size) ((T**)&(ps_slice_info_new(data, size)->ptr))
 
 #define ps_slice_free(slice)\
     PS_BLK(\
@@ -110,6 +112,7 @@ typedef struct ps_list_info_t {
 #define ps_list_capacity(list) (((size_t*)(list))[-2])
 #define ps_list_size(list) (((size_t*)(list))[-1])
 #define ps_list_ptr(list) (*(list))
+#define ps_list_info(list) (*(ps_list_info_t*)(ps_list_capacity(list)))
 
 #define ps_list_init(T)\
     (T**)(&(ps_list_info_t){0}.ptr)
@@ -241,31 +244,5 @@ static PS_INLINE ps_list_info_t *ps_list_info_new(const void *data, size_t size)
         (T[]){__VA_ARGS__}, \
         sizeof((T[]){__VA_ARGS__}) / sizeof(T)\
     )->ptr))
-
-
-static PS_INLINE void ps_list_append_fmt_internal(char ***list_ptr, const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    va_list args_copy;
-    va_copy(args_copy, args);
-    int len = vsnprintf(NULL, 0, fmt, args_copy);
-    va_end(args_copy);
-
-    if (len > 0) {
-        char **list = *list_ptr;
-        size_t old_size = ps_list_size(list);
-        if (old_size > 0 && ps_list_ptr(list)[old_size - 1] == '\0') {
-            old_size--;
-        }
-        ps_list_reserve(list, old_size + len + 1);
-        vsnprintf(ps_list_ptr(list) + old_size, len + 1, fmt, args);
-        ps_list_size(list) = old_size + len + 1;
-    }
-
-    va_end(args);
-}
-
-#define ps_list_append_fmt(list, ...)\
-    ps_list_append_fmt_internal(&(list), __VA_ARGS__)
 
 #endif // PSCOLLECTION_H
