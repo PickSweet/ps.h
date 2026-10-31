@@ -27,6 +27,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "pscore.h"
 #include "pscollection.h"
+#include "psstring.h"
 #ifdef PSBUILD_IMP
 #define PSLOG_IMP
 #define PSFILE_IMP
@@ -210,15 +211,19 @@ void psb_rebuild_yourself_(ps_list_t(char*) args, const char *src_file){
     if (psb_needs_rebuild(args, src_file)){
         ps_log(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, ps_list_get(args,0));
         size_t exe_path_len = strlen(ps_list_get(args,0));
-        ps_list_t(char) cmd = ps_list_init(char);
-        ps_list_t(char) old_exe_path = ps_list_init(char);
-        ps_list_append_fmt(cmd, "%s %s -o %s", CC, src_file, ps_list_get(args,0));;
-        ps_list_append_fmt(old_exe_path, "%s.old", ps_list_get(args,0));
-        if (ps_file_exists(ps_list_ptr(old_exe_path))){
-            ps_file_delete(ps_list_ptr(old_exe_path));
+        ps_string_t cmd = ps_str_init();
+        ps_string_t old_exe_path = ps_str_init();
+        ps_str_append_fmt(cmd, "%s %s -o %s", CC, src_file, ps_list_get(args,0));
+        ps_str_append_fmt(old_exe_path, "%s.old", ps_list_get(args,0));
+        if (ps_file_exists(ps_str_raw(old_exe_path))){
+            ps_file_delete(ps_str_raw(old_exe_path));
         }
-        ps_file_rename(ps_list_get(args,0), ps_list_ptr(old_exe_path));
-        system(*cmd);
+        ps_file_rename(ps_list_get(args,0), ps_str_raw(old_exe_path));
+        int err = system(*cmd);
+        if (err){
+            ps_file_rename(ps_str_raw(old_exe_path), ps_list_get(args,0));
+            goto _exit;
+        };
 #ifdef _WIN32
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
@@ -233,8 +238,9 @@ void psb_rebuild_yourself_(ps_list_t(char*) args, const char *src_file){
 #else
         PS_TODO("Unimplemented");
 #endif
-        ps_list_info_free(cmd);
-        ps_list_info_free(old_exe_path);
+    _exit:
+        ps_str_info_free(cmd);
+        ps_str_info_free(old_exe_path);
         exit(0);
     }
 }
