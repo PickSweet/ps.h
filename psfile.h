@@ -120,12 +120,14 @@ ps_list_t(char*) ps_dir_find_files(const char *path, int ps_include){
     ps_log(PS_LOG_INFO, "Searching directory %s\n", path);
     do {
         if (strcmp(find_data.cFileName, ".") == 0 || strcmp(find_data.cFileName, "..") == 0) continue;
-        if (((find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) && (ps_include & PS_INCLUDE_DIRECTORIES) == PS_INCLUDE_DIRECTORIES){
-            size_t str_len = strlen(find_data.cFileName);
-            char *str = PS_REALLOC(NULL, str_len + 1);
-            PS_MEMCPY(str,find_data.cFileName,str_len);
-            str[str_len] = '\0';
-            ps_list_append(result, str);
+        if (((find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)){
+            if (ps_include && PS_INCLUDE_FILES){
+                size_t str_len = strlen(find_data.cFileName);
+                char *str = PS_REALLOC(NULL, str_len + 1);
+                PS_MEMCPY(str,find_data.cFileName,str_len);
+                str[str_len] = '\0';
+                ps_list_append(result, str);
+            }
         }else if((ps_include & PS_INCLUDE_FILES) == PS_INCLUDE_FILES){
             size_t str_len = strlen(find_data.cFileName);
             char *str = PS_REALLOC(NULL, str_len + 1);
