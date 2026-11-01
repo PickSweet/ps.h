@@ -6,6 +6,7 @@
 
 typedef ps_list_t(char) ps_string_t;
 typedef ps_slice_t(char) ps_string_view_t;
+typedef ptrdiff_t isize_t;
 
 #define ps_str_init() ps_list_init(char)
 #define ps_str_new() ps_list_new(char)
@@ -17,6 +18,7 @@ typedef ps_slice_t(char) ps_string_view_t;
 #define ps_str_info(str) ps_list_info(str)
 #define ps_str_concat(str1,str2) ps_list_append_list(str1,str2)
 #define ps_str_concat_c_str(str, cstr) ps_list_append_many(str,cstr,strlen(cstr))
+#define ps_str_concat_c_strz(str, cstrz) ps_list_append_many(str, cstrz, strlen(cstrz)+1);
 
 #define ps_str_to_view(str, start, size) ps_slice_init(ps_list_ptr(str) + (start), (size))
 #define ps_str_to_new_view(str, start, size) ps_slice_new(char, ps_list_ptr(str) + (start), (size))
@@ -44,5 +46,20 @@ static PS_INLINE void _ps_string_append_fmt_internal(ps_string_t str, const char
 
 #define ps_str_append_fmt(str, ...)\
     _ps_string_append_fmt_internal(str, __VA_ARGS__)
+
+isize_t ps_str_find_last(ps_string_t str, const char *delim){
+    size_t delim_size = strlen(delim);
+    isize_t start = ps_str_size(str) - delim_size;
+    char* check = (char *)PS_REALLOC(NULL, delim_size + 1);
+    check[delim_size] = 0;
+    do {
+        PS_MEMCPY(check, ps_list_ptr(str) + start, delim_size);
+        if (!strcmp(check, delim)){
+            return start;
+        }
+    } while (--start);
+    PS_FREE(check);
+    return start;
+}
 
 #endif // PSSTRING_H
