@@ -52,7 +52,7 @@ typedef ps_list_t(ps_graph_node_t) ps_graph_t;
 
 
 typedef struct ps_builder_t {
-    ps_list_t(char*) args;
+    ps_slice_t(char*) args;
     ps_graph_t graph;
 } ps_builder_t;
 
@@ -201,27 +201,27 @@ int psb_shell_cmd_fn(const char **ctx) {
     return ret;
 }
 
-int psb_needs_rebuild(ps_list_t(char *) args, const char *src_file){
+int psb_needs_rebuild(ps_slice_t(char *) args, const char *src_file){
     time_t src_time = ps_file_get_mod_time(src_file);
-    time_t exe_time = ps_file_get_mod_time(ps_list_get(args,0));
+    time_t exe_time = ps_file_get_mod_time(ps_slice_get(args,0));
     return src_time > exe_time;
 }
 
-void psb_rebuild_yourself_(ps_list_t(char*) args, const char *src_file){
+void psb_rebuild_yourself_(ps_slice_t(char*) args, const char *src_file){
     if (psb_needs_rebuild(args, src_file)){
-        ps_log(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, ps_list_get(args,0));
-        size_t exe_path_len = strlen(ps_list_get(args,0));
+        ps_log(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, ps_slice_get(args,0));
+        size_t exe_path_len = strlen(ps_slice_get(args,0));
         ps_string_t cmd = ps_str_init();
         ps_string_t old_exe_path = ps_str_init();
-        ps_str_append_fmt(cmd, "%s %s -o %s", CC, src_file, ps_list_get(args,0));
-        ps_str_append_fmt(old_exe_path, "%s.old", ps_list_get(args,0));
+        ps_str_append_fmt(cmd, "%s %s -o %s", CC, src_file, ps_slice_get(args,0));
+        ps_str_append_fmt(old_exe_path, "%s.old", ps_slice_get(args,0));
         if (ps_file_exists(ps_str_raw(old_exe_path))){
             ps_file_delete(ps_str_raw(old_exe_path));
         }
-        ps_file_rename(ps_list_get(args,0), ps_str_raw(old_exe_path));
+        ps_file_rename(ps_slice_get(args,0), ps_str_raw(old_exe_path));
         int err = system(*cmd);
         if (err){
-            ps_file_rename(ps_str_raw(old_exe_path), ps_list_get(args,0));
+            ps_file_rename(ps_str_raw(old_exe_path), ps_slice_get(args,0));
             goto _exit;
         };
 #ifdef _WIN32
@@ -253,13 +253,12 @@ int main(int argc, char** argv) {
         ps_list_init(char*),
         ps_list_init(ps_graph_node_t),
     };
-    ps_list_append_many(builder.args,argv,argc);
+    builder.args = ps_slice_init(argv,argc);
     ps_list_append(builder.graph,(ps_graph_node_t){NULL,0,ps_list_new(ps_idx_t)});
     int result = build(&builder);
     if(result) goto defer;
     psb_run(builder.graph);
     defer:
-        //psb_free(builder.graph);
         return result;
 }
 
