@@ -41,10 +41,14 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define _ps_decl_type_cast(T)
 #endif // _ps_decl_type_cast
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) || defined(__clang__)
 #define _ps_typeof(...) typeof(__VA_ARGS__)
-#elif defined(_MSC_VER) && !defined(__clang__) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L)
+#elif defined(_MSC_VER)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201710L
 #define _ps_typeof(...) typeof(__VA_ARGS__)
+#else
+#define _ps_typeof(...) __UNSUPPORTED__
+#endif
 #else
 #define _ps_typeof(...) __typeof__(__VA_ARGS__)
 #endif // _ps_typeof
