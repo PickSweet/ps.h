@@ -22,8 +22,8 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#ifndef PSFILE_H
-#define PSFILE_H
+#ifndef _H_PS_FILE_H_
+#define _H_PS_FILE_H_
 
 #include "pscore.h"
 #include "pslog.h"
@@ -37,25 +37,23 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PS_WINDOWS_EPOCH_DIFF 116444736000000000ULL
 #endif
 
-#define PS_INCLUDE_DIRECTORIES 0x1
-#define PS_INCLUDE_FILES 0x2
 
-int ps_dir_exists(const char *path);
-int ps_dir_ensure(const char *path);
-int ps_dir_create(const char *path);
-int ps_dir_delete(const char *path);
-ps_list_t(char*) ps_dir_find_files(const char *path, int ps_include);
+PS_DEF int ps_dir_exists(const char *path);
+PS_DEF int ps_dir_ensure(const char *path);
+PS_DEF int ps_dir_create(const char *path);
+PS_DEF int ps_dir_delete(const char *path);
+//PS_DEF ps_list_t ps_dir_find_files(const char *path, int ps_include);
 
 
-int ps_file_exists(const char *path);
-int ps_file_delete(const char *path);
-int ps_file_rename(const char *src_path, const char *dest_path);
-time_t ps_file_get_mod_time(const char *path);
+PS_DEF int ps_file_exists(const char *path);
+PS_DEF int ps_file_delete(const char *path);
+PS_DEF int ps_file_rename(const char *src_path, const char *dest_path);
+PS_DEF time_t ps_file_get_mod_time(const char *path);
 
 
-#ifdef PSFILE_IMP
+#ifdef PS_FILE_IMP
 
-int ps_dir_exists(const char *path){
+PS_DEF int ps_dir_exists(const char *path){
 #ifdef _WIN32
     DWORD attrs = GetFileAttributesA(path);
     return (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY));
@@ -64,7 +62,7 @@ int ps_dir_exists(const char *path){
 #endif
 }
 
-int ps_dir_create(const char *path){
+PS_DEF int ps_dir_create(const char *path){
 #ifdef _WIN32
     if (CreateDirectoryA(path,NULL)){
         ps_log(PS_LOG_INFO, "Created directory %s\n", path);
@@ -77,7 +75,7 @@ int ps_dir_create(const char *path){
 #endif
 }
 
-int ps_dir_ensure(const char *path){
+PS_DEF int ps_dir_ensure(const char *path){
 #ifdef _WIN32
     if (CreateDirectoryA(path,NULL)){
         ps_log(PS_LOG_INFO, "Created directory: %s\n",path);
@@ -96,7 +94,7 @@ int ps_dir_ensure(const char *path){
 }
 
 
-int ps_dir_delete(const char *path){
+PS_DEF int ps_dir_delete(const char *path){
 #ifdef _WIN32
     if (RemoveDirectoryA(path)){
         return 1;
@@ -107,44 +105,44 @@ int ps_dir_delete(const char *path){
 #endif
 }
 
-ps_list_t(char*) ps_dir_find_files(const char *path, int ps_include){
-#ifdef _WIN32
-    WIN32_FIND_DATA find_data;
-    ps_list_t(char*) result = ps_list_new(char *);
-    PS_HANDLE iter = FindFirstFile(path, &find_data);
-    if (iter == INVALID_HANDLE_VALUE){
-        ps_log(PS_LOG_ERROR, "Failed to open directory %s. (%d)\n", path, GetLastError());
-        ps_list_free(result);
-        return NULL;
-    }
-    ps_log(PS_LOG_INFO, "Searching directory %s\n", path);
-    do {
-        if (strcmp(find_data.cFileName, ".") == 0 || strcmp(find_data.cFileName, "..") == 0) continue;
-        if (((find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)){
-            if (ps_include && PS_INCLUDE_FILES){
-                size_t str_len = strlen(find_data.cFileName);
-                char *str = PS_REALLOC(NULL, str_len + 1);
-                PS_MEMCPY(str,find_data.cFileName,str_len);
-                str[str_len] = '\0';
-                ps_list_append(result, str);
-            }
-        }else if((ps_include & PS_INCLUDE_FILES) == PS_INCLUDE_FILES){
-            size_t str_len = strlen(find_data.cFileName);
-            char *str = PS_REALLOC(NULL, str_len + 1);
-            PS_MEMCPY(str,find_data.cFileName,str_len);
-            str[str_len] = '\0';
-            ps_list_append(result, str);
-        }
-    }while(FindNextFile(iter, &find_data) != 0);
-    FindClose(iter);
-    return result;
-#else
-    PS_TODO("Unimplemented");
-#endif    
-}
+// PS_DEF ps_list_t ps_dir_find_files(const char *path, int ps_include){
+// #ifdef _WIN32
+//     WIN32_FIND_DATA find_data;
+//     ps_list_t result = {0};
+//     char ***r_ptr = (char ***)&result.items;
+//     PS_HANDLE iter = FindFirstFile(path, &find_data);
+//     if (iter == INVALID_HANDLE_VALUE){
+//         ps_log(PS_LOG_ERROR, "Failed to open directory %s. (%d)\n", path, GetLastError());
+//         return result;
+//     }
+//     ps_log(PS_LOG_INFO, "Searching directory %s\n", path);
+//     do {
+//         if (strcmp(find_data.cFileName, ".") == 0 || strcmp(find_data.cFileName, "..") == 0) continue;
+//         if (((find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY)){
+//             if (ps_include && PS_INCLUDE_FILES){
+//                 size_t str_len = strlen(find_data.cFileName);
+//                 char *str = _ps_realloc(NULL, str_len + 1);
+//                 _ps_memcpy(str,find_data.cFileName,str_len);
+//                 str[str_len] = '\0';
+//                 _ps_list_append_one(r_ptr, str);
+//             }
+//         }else if((ps_include & PS_INCLUDE_FILES) == PS_INCLUDE_FILES){
+//             size_t str_len = strlen(find_data.cFileName);
+//             char *str = _ps_realloc(NULL, str_len + 1);
+//             _ps_memcpy(str,find_data.cFileName,str_len);
+//             str[str_len] = '\0';
+//             _ps_list_append_one(r_ptr, str);
+//         }
+//     }while(FindNextFile(iter, &find_data) != 0);
+//     FindClose(iter);
+//     return result;
+// #else
+//     PS_TODO("Unimplemented");
+// #endif    
+// }
 
 
-int ps_file_exists(const char *path){
+PS_DEF int ps_file_exists(const char *path){
 #ifdef _WIN32
     DWORD attrs = GetFileAttributesA(path);
     return (attrs != INVALID_FILE_ATTRIBUTES && !(attrs & FILE_ATTRIBUTE_DIRECTORY));
@@ -153,7 +151,7 @@ int ps_file_exists(const char *path){
 #endif
 }
 
-int ps_file_delete(const char *path){
+PS_DEF int ps_file_delete(const char *path){
 #ifdef _WIN32
     if (DeleteFileA(path)){
         return 1;
@@ -164,7 +162,7 @@ int ps_file_delete(const char *path){
 #endif
 }
 
-int ps_file_rename(const char *src_path, const char *dest_path){
+PS_DEF int ps_file_rename(const char *src_path, const char *dest_path){
 #ifdef _WIN32
     if (MoveFileA(src_path, dest_path)){
         return 1;
@@ -175,7 +173,7 @@ int ps_file_rename(const char *src_path, const char *dest_path){
 #endif
 }
 
-time_t ps_file_get_mod_time(const char *path){
+PS_DEF time_t ps_file_get_mod_time(const char *path){
 #ifdef _WIN32
     WIN32_FILE_ATTRIBUTE_DATA file_info;
     if (!GetFileAttributesExA(path, GetFileExInfoStandard, &file_info)){
@@ -198,6 +196,6 @@ time_t ps_file_get_mod_time(const char *path){
 #endif
 }
 
-#endif // PSFILE_IMP
+#endif // PS_FILE_IMP
 
-#endif // PSFILE_H
+#endif // _H_PS_FILE_H_
