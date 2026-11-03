@@ -72,21 +72,21 @@ PS_DEF void ps_log_level_toggle(ps_log_level_e levels){
     ps_log_levels_enabled ^= levels;
 }
 
-static ps_log_handler *ps__log_handler = &ps_default_log_handler;
+static ps_log_handler *__i_ps_log_handler = &ps_default_log_handler;
 
 PS_DEF void ps_set_log_handler(ps_log_handler *handler){
-    ps__log_handler = handler;
+    __i_ps_log_handler = handler;
 }
 
 PS_DEF ps_log_handler *ps_get_log_handler(void){
-    return ps__log_handler;
+    return __i_ps_log_handler;
 }
 
 PS_DEF void ps_log(ps_log_level_e level, const char* fmt, ...){
     va_list args;
     va_start(args, fmt);
     if ((ps_log_levels_enabled & level) == level){
-        ps__log_handler(level, fmt, args);
+        __i_ps_log_handler(level, fmt, args);
     }
     va_end(args);
 }
