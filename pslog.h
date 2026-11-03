@@ -22,8 +22,8 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#ifndef PSLOG_H
-#define PSLOG_H
+#ifndef _H_PS_LOG_H_
+#define _H_PS_LOG_H_
 
 #include "pscore.h"
 
@@ -36,19 +36,6 @@ typedef unsigned char ps_log_level_e;
 #define PS_LOG_WARNING 0x02
 #define PS_LOG_ERROR 0x04
 #define PS_LOG_ALL 0xFF
-
-//  borrowing from nob.h here
-#if defined(__GNUC__) || defined(__clang__)
-//   https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
-#    ifdef __MINGW_PRINTF_FORMAT
-#        define PS_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK) __attribute__ ((format (__MINGW_PRINTF_FORMAT, STRING_INDEX, FIRST_TO_CHECK)))
-#    else
-#        define PS_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK) __attribute__ ((format (printf, STRING_INDEX, FIRST_TO_CHECK)))
-#    endif // __MINGW_PRINTF_FORMAT
-#else
-//   TODO: implement NOB_PRINTF_FORMAT for MSVC
-#    define PS_PRINTF_FORMAT(STRING_INDEX, FIRST_TO_CHECK)
-#endif
 
 typedef void (ps_log_handler)(ps_log_level_e level, const char* fmt, va_list args);
 
@@ -63,15 +50,15 @@ PS_DEF ps_log_handler *ps_get_log_handler(void);
 
 PS_DEF ps_log_handler ps_default_log_handler;
 
-PS_DEF void ps_log(ps_log_level_e level, const char* fmt, ...) PS_PRINTF_FORMAT(2,3);
+PS_DEF void ps_log(ps_log_level_e level, const char* fmt, ...) _ps_printf_format(2,3);
 
-PS_DEF const char *ps_log_level_prefixes[8] = {"[INFO]", "[WARNING]", "[ERROR]",0,0,0,0,0};
+PS_DEF const char *__i_ps_log_level_prefixes[8] = {"[INFO]", "[WARNING]", "[ERROR]",0,0,0,0,0};
 
-PS_DEF unsigned char _ps_get_log_level_index(ps_log_level_e level);
+PS_DEF unsigned char __i_ps_get_log_level_index(ps_log_level_e level);
 PS_DEF void ps_set_log_prefix(ps_log_level_e level, const char *prefix);
-PS_DEF const char *ps_get_log_prefix(ps_log_level_e level);
+PS_DEF const char *__i_ps_get_log_prefix(ps_log_level_e level);
 
-#ifdef PSLOG_IMP
+#ifdef PS_LOG_IMP
 
 PS_DEF void ps_log_level_disable(ps_log_level_e levels){
     ps_log_levels_enabled &= (~levels);
@@ -104,7 +91,7 @@ PS_DEF void ps_log(ps_log_level_e level, const char* fmt, ...){
     va_end(args);
 }
 
-PS_DEF unsigned char _ps_get_log_level_index(ps_log_level_e level){
+PS_DEF unsigned char __i_ps_get_log_level_index(ps_log_level_e level){
     unsigned char idx = 0;
     ps_log_level_e l = level;
     if (l == 0) return 0xFF;
@@ -113,18 +100,18 @@ PS_DEF unsigned char _ps_get_log_level_index(ps_log_level_e level){
 }
 
 PS_DEF void ps_set_log_prefix(ps_log_level_e level, const char * prefix){
-    unsigned char idx = _ps_get_log_level_index(level);
-    ps_log_level_prefixes[idx] = prefix;
+    unsigned char idx = __i_ps_get_log_level_index(level);
+    __i_ps_log_level_prefixes[idx] = prefix;
 }
 
-PS_DEF const char *ps_get_log_prefix(ps_log_level_e level){
-    unsigned char idx = _ps_get_log_level_index(level);
-    return ps_log_level_prefixes[idx];
+PS_DEF const char *__i_ps_get_log_prefix(ps_log_level_e level){
+    unsigned char idx = __i_ps_get_log_level_index(level);
+    return __i_ps_log_level_prefixes[idx];
 }
 
 PS_DEF void ps_default_log_handler(ps_log_level_e level, const char* fmt, va_list args){
     ps_log_level_e reporting_level = ps_log_levels_enabled & level;
-    const char* prefix = ps_get_log_prefix(reporting_level);
+    const char* prefix = __i_ps_get_log_prefix(reporting_level);
     FILE *out = stdout;
     if( level & (PS_LOG_WARNING | PS_LOG_ERROR)){
         out = stderr;
@@ -138,6 +125,6 @@ PS_DEF void ps_default_log_handler(ps_log_level_e level, const char* fmt, va_lis
 }
 
 
-#endif // PSLOG_IMP
+#endif // PS_LOG_IMP
 
-#endif // PSLOG_H
+#endif // _H_PS_LOG_H_
