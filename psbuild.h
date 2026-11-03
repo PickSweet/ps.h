@@ -22,16 +22,17 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#ifndef PSBUILD_H
-#define PSBUILD_H
+#ifndef _H_PS_BUILD_H_
+#define _H_PS_BUILD_H_
 
 #include "pscore.h"
-#include "pscollection.h"
-#include "psstring.h"
-#ifdef PSBUILD_IMP
-#define PSLOG_IMP
-#define PSFILE_IMP
+
+#ifdef PS_BUILD_IMP
+#define PS_COLLECTIONS_IMP
+#define PS_LOG_IMP
+#define PS_FILE_IMP
 #endif
+#include "pscollection.h"
 #include "pslog.h"
 #include "psfile.h"
 
@@ -42,132 +43,129 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 typedef int (*psb_fn_t)(void*);
 typedef size_t ps_idx_t;
 typedef struct ps_graph_node_t {
-    PS_CLOSURE_T(int, void) closure;
-    ps_list_t(ps_idx_t) children;
+    _ps_closure_t(int, void) closure;
+    ps_list_t children;
     ps_idx_t parent;
 } ps_graph_node_t;
 
 
-typedef ps_list_t(ps_graph_node_t) ps_graph_t;
+typedef ps_graph_node_t** ps_graph_t;
 
 
 typedef struct ps_builder_t {
-    ps_slice_t(char*) args;
+    char ***args;
     ps_graph_t graph;
 } ps_builder_t;
 
-ps_idx_t psb_append_child_cmd_(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx, size_t ctx_size);
+ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx, size_t ctx_size);
 void psb_free(ps_graph_t graph);
 
 
-#define psb_append_child_cmd(builder, parent_idx, p_fn)\
-    psb_append_child_cmd_((builder)->graph,parent_idx,(psb_fn_t)(p_fn),NULL,0)
+#define _ps_build_append_child_cmd(builder, parent_idx, p_fn)\
+    __i_ps_build_append_child_cmd((builder)->graph,parent_idx,(psb_fn_t)(p_fn),NULL,0)
 
 
-#define psb_graph_append_cmd(builder, p_fn)\
-    psb_append_child_cmd(builder,0,p_fn)
+#define _ps_build_graph_append_cmd(builder, p_fn)\
+    _ps_build_append_child_cmd(builder,0,p_fn)
 
 
-#define psb_append_child_cmd_with_ctx(builder, parent_idx, p_fn, T, ...)\
-    psb_append_child_cmd_((builder)->graph, parent_idx, (psb_fn_t)(p_fn), (void *)&((T){__VA_ARGS__}),sizeof((T){__VA_ARGS__}))
+#define _ps_build_append_child_cmd_with_ctx(builder, parent_idx, p_fn, T, ...)\
+    __i_ps_build_append_child_cmd((builder)->graph, parent_idx, (psb_fn_t)(p_fn), (void *)&((T){__VA_ARGS__}),sizeof((T){__VA_ARGS__}))
 
-#define psb_append_cmd_with_ctx(builder,p_fn,T,...)\
-    psb_append_child_cmd_with_ctx(builder,0,p_fn,T,__VA_ARGS__)
+#define _ps_build_append_cmd_with_ctx(builder,p_fn,T,...)\
+    _ps_build_append_child_cmd_with_ctx(builder,0,p_fn,T,__VA_ARGS__)
 
-typedef struct psb_frame_t{
+typedef struct ps_build_frame_t{
     ps_idx_t node_idx;
     size_t child_idx; // Tracks which child we are currently visiting
-} psb_frame_t;
+} ps_build_frame_t;
 
-typedef ps_list_t(psb_frame_t) psb_frame_stack; 
+PS_DEF int ps_build_run(ps_graph_t graph);
 
-PS_DEF int psb_run(ps_graph_t graph);
+int ps_build_shell_cmd_fn(const char **ctx);
 
-int psb_shell_cmd_fn(const char **ctx);
-
-#define psb_append_shell_cmd(builder,...)\
-    psb_append_cmd_with_ctx(builder,psb_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
+#define _ps_build_append_shell_cmd(builder,...)\
+    _ps_build_append_cmd_with_ctx(builder,ps_build_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
 
 
-#define psb_append_child_shell_cmd(builder,parent_idx, ...)\
-    psb_append_child_cmd_with_ctx(builder,parent_idx, psb_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
+#define _ps_build_append_child_shell_cmd(builder,parent_idx, ...)\
+    _ps_build_append_child_cmd_with_ctx(builder,parent_idx, psb_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
 
-
-#ifdef PSBUILD_IMP
+#ifdef PS_BUILD_IMP
 #define PS_SRC_FILE() __FILE__
-#define psb_rebuild_yourself(args) psb_rebuild_yourself_(args, __FILE__);
+#define _ps_build_rebuild_yourself(args) __i_ps_build_rebuild_yourself(args, __FILE__);
 
-ps_idx_t psb_append_child_cmd_(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx,size_t ctx_size){
-    void *ctx_cp = PS_REALLOC(NULL,ctx_size);
-    PS_MEMCPY(ctx_cp,ctx,ctx_size);
+ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx,size_t ctx_size){
+    void *ctx_cp = _ps_realloc(NULL,ctx_size);
+    _ps_memcpy(ctx_cp,ctx,ctx_size);
     ps_graph_node_t node = {0};
     node.closure.fn = fn;
     node.closure.ctx = ctx_cp;
     node.parent = parent;
-    node.children = ps_list_new(ps_idx_t);
-    ps_list_append(graph,node);
-    ps_idx_t new_idx = ps_list_size(graph) - 1;
-    ps_list_append((ps_list_get(graph,parent)).children,new_idx);
+    node.children = (ps_list_t){0};
+    _ps_list_append_one(graph,node);
+    ps_idx_t new_idx = _ps_list_size(graph) - 1;
+    _ps_list_append_one(&(_ps_list_get(graph,parent)).children.items,new_idx);
     return  new_idx;
 }
 
 void psb_free(ps_graph_t graph){
-    ps_list_foreach(graph, node){
-        ps_list_free(node->children);
-        PS_FREE(node->closure.ctx);
+    _ps_list_foreach(graph, node){
+        _ps_list_free(&node->children.items);
+        _ps_free(node->closure.ctx);
         node->closure.ctx = NULL;
         node->closure.fn = NULL;
         node->parent = 0;
     }
-    ps_list_free(graph);
+    _ps_list_free(graph);
 }
 
-PS_DEF int psb_run(ps_graph_t graph) {
+PS_DEF int ps_build_run(ps_graph_t graph) {
     // Create a local dynamic array to act as our explicit stack
-    psb_frame_stack stack = ps_list_init(psb_frame_t);
-    ps_list_t(char) states = ps_list_init(char);
-    ps_list_resize(states, ps_list_size(graph));
-    PS_MEMSET(ps_list_ptr(states),0,ps_list_size(graph));
+    ps_build_frame_t **stack = (ps_build_frame_t**)(&(ps_list_t){0});
+    char **states = (char**)(&(ps_list_t){0});
+    _ps_list_resize(states, _ps_list_size(graph));
+    _ps_memset(_ps_list_items(states),0,_ps_list_size(graph));
 
     // Push the root node (index 0) to start
-    ps_list_set(states, 0, 1);
-    ps_list_append(stack, ((psb_frame_t){ .node_idx = 0, .child_idx = 0 }));
+    _ps_list_set(states, 0, 1);
+    _ps_list_append(stack, ((ps_build_frame_t){ .node_idx = 0, .child_idx = 0 }));
 
     int result = 0;
-    while (!ps_list_is_empty(stack)) {
+    while (!_ps_list_is_empty(stack)) {
         // Look at the top frame without popping it yet
-        psb_frame_t *frame = &ps_list_last(stack);
-        ps_graph_node_t *node = &ps_list_get(graph,frame->node_idx);
+        ps_build_frame_t *frame = &_ps_list_last(stack);
+        ps_graph_node_t *node = &_ps_list_get(graph,frame->node_idx);
 
-        size_t num_children = ps_list_size(node->children);
+        size_t num_children = _ps_list_size(&node->children.items);
 
         // 1. If there are unvisited children, push the next child onto the stack
         if (frame->child_idx < num_children) {
-            ps_idx_t next_child_idx = ps_list_get(node->children, frame->child_idx);
+            ps_idx_t next_child_idx = _ps_list_get(&node->children.items, frame->child_idx);
             
             // Advance parent's child index for the next iteration
             frame->child_idx++;
-            if(ps_list_get(states, next_child_idx) == 1){
-                PS_AFTER_GOTO(
+            if(_ps_list_get(states, next_child_idx) == 1){
+                _ps_after_goto(
                     result = -1;,
                     defer
                 );
             }
-            if (ps_list_get(states, next_child_idx) == 0){
-                ps_list_set(states, next_child_idx, 1);
-                ps_list_append_one(stack, ((psb_frame_t){ .node_idx = next_child_idx, .child_idx = 0 }));
+            if (_ps_list_get(states, next_child_idx) == 0){
+                _ps_list_set(states, next_child_idx, 1);
+                _ps_list_append_one(stack, ((ps_build_frame_t){ .node_idx = next_child_idx, .child_idx = 0 }));
             }
         } 
         // 2. All children finished! Pop this frame and execute the node.
         else {
             ps_idx_t completed_idx = frame->node_idx;
-            ps_list_pop(stack); // Remove frame from stack
-            ps_list_set(states, completed_idx, 2);
+            _ps_list_pop(stack); // Remove frame from stack
+            _ps_list_set(states, completed_idx, 2);
             
             if (node->closure.fn != NULL){
                 int res = node->closure.fn(node->closure.ctx);
                 if (res != 0) {
-                    PS_AFTER_GOTO(
+                    _ps_after_goto(
                         result = res;,
                         defer
                     );
@@ -176,52 +174,52 @@ PS_DEF int psb_run(ps_graph_t graph) {
         }
     }
     defer:
-        ps_list_info_free(stack);
-        ps_list_info_free(states);
+        _ps_list_free(stack);
+        _ps_list_free(states);
         return result;
 }
 
-int psb_shell_cmd_fn(const char **ctx) {
-    ps_list_t(char) scratch = ps_list_init(char);
+int ps_build_shell_cmd_fn(const char **ctx) {
+    char **scratch = (char**)(&(ps_list_t){0});
 
     const char **p = ctx;
     while (*p != NULL) {
         size_t len = strlen(*p);
-        if (ps_list_size(scratch) > 0) {
-            ps_list_append(scratch, ' ');
+        if (_ps_list_size(scratch) > 0) {
+            _ps_list_append_one(scratch, ' ');
         }
-        ps_list_append_many(scratch, *p, len);
+        _ps_list_append_many(scratch, *p, len);
         p++;
     }
-    ps_list_append(scratch, '\0');
-    char *cmd = ps_list_ptr(scratch);
+    _ps_list_append_one(scratch, '\0');
+    char *cmd = *scratch;
     ps_log(PS_LOG_INFO, "Executing: %s\n", cmd);
     int ret = system(cmd);
-    ps_list_info_free(scratch);
+    _ps_list_free(scratch);
     return ret;
 }
 
-int psb_needs_rebuild(ps_slice_t(char *) args, const char *src_file){
+int __i_ps_build_needs_rebuild(char  ***args, const char *src_file){
     time_t src_time = ps_file_get_mod_time(src_file);
-    time_t exe_time = ps_file_get_mod_time(ps_slice_get(args,0));
+    time_t exe_time = ps_file_get_mod_time(_ps_slice_get(args,0));
     return src_time > exe_time;
 }
 
-void psb_rebuild_yourself_(ps_slice_t(char*) args, const char *src_file){
-    if (psb_needs_rebuild(args, src_file)){
-        ps_log(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, ps_slice_get(args,0));
-        size_t exe_path_len = strlen(ps_slice_get(args,0));
-        ps_string_t cmd = ps_str_init();
-        ps_string_t old_exe_path = ps_str_init();
-        ps_str_append_fmt(cmd, "%s %s -o %s", CC, src_file, ps_slice_get(args,0));
-        ps_str_append_fmt(old_exe_path, "%s.old", ps_slice_get(args,0));
-        if (ps_file_exists(ps_str_raw(old_exe_path))){
-            ps_file_delete(ps_str_raw(old_exe_path));
+void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
+    if (__i_ps_build_needs_rebuild(args, src_file)){
+        ps_log(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, _ps_slice_get(args,0));
+        size_t exe_path_len = strlen(_ps_slice_get(args,0));
+        char **cmd = (char**)(&(ps_list_t){0});
+        char ** old_exe_path = (char**)(&(ps_list_t){0});
+        ps_str_append_fmt(cmd, "%s %s -o %s", CC, src_file, _ps_slice_get(args,0));
+        ps_str_append_fmt(old_exe_path, "%s.old", _ps_slice_get(args,0));
+        if (ps_file_exists(*old_exe_path)){
+            ps_file_delete(*old_exe_path);
         }
-        ps_file_rename(ps_slice_get(args,0), ps_str_raw(old_exe_path));
+        ps_file_rename(_ps_slice_get(args,0), *old_exe_path);
         int err = system(*cmd);
         if (err){
-            ps_file_rename(ps_str_raw(old_exe_path), ps_slice_get(args,0));
+            ps_file_rename(*old_exe_path, _ps_slice_get(args,0));
             goto _exit;
         };
 #ifdef _WIN32
@@ -230,8 +228,8 @@ void psb_rebuild_yourself_(ps_slice_t(char*) args, const char *src_file){
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
-        if (!CreateProcessA(NULL,ps_list_get(args,0),NULL,NULL,0,0,NULL,NULL,&si,&pi)){
-            ps_log(PS_LOG_INFO, "Unable to restart %s", ps_list_get(args,0));
+        if (!CreateProcessA(NULL,_ps_slice_get(args,0),NULL,NULL,0,0,NULL,NULL,&si,&pi)){
+            ps_log(PS_LOG_INFO, "Unable to restart %s", _ps_slice_get(args,0));
         }
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -239,8 +237,8 @@ void psb_rebuild_yourself_(ps_slice_t(char*) args, const char *src_file){
         PS_TODO("Unimplemented");
 #endif
     _exit:
-        ps_str_info_free(cmd);
-        ps_str_info_free(old_exe_path);
+        _ps_list_free(cmd);
+        _ps_list_free(old_exe_path);
         exit(0);
     }
 }
@@ -250,14 +248,13 @@ void psb_rebuild_yourself_(ps_slice_t(char*) args, const char *src_file){
 int build(ps_builder_t *builder);
 int main(int argc, char** argv) {
     ps_builder_t builder = {
-        ps_list_init(char*),
-        ps_list_init(ps_graph_node_t),
+        (char ***)(&_ps_get_slice(argv,argc)),
+        (ps_graph_t)(&(ps_list_t){0})
     };
-    builder.args = ps_slice_init(argv,argc);
-    ps_list_append(builder.graph,(ps_graph_node_t){NULL,0,ps_list_new(ps_idx_t)});
+    _ps_list_append_one(builder.graph,(ps_graph_node_t){0});
     int result = build(&builder);
     if(result) goto defer;
-    psb_run(builder.graph);
+    ps_build_run(builder.graph);
     defer:
         return result;
 }
