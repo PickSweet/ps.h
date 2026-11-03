@@ -224,9 +224,10 @@ PS_DEF isize_t ps_str_find_last(char **str, const char *delim){
     do {
         _ps_memcpy(check, _ps_list_items(str) + start, delim_size);
         if (!strcmp(check, delim)){
-            return start;
+            goto return_l;
         }
     } while (--start);
+return_l:
     _ps_free(check);
     return start;
 }
