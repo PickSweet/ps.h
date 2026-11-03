@@ -23,29 +23,31 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 
-#ifndef PSCORE_H
-#define PSCORE_H
+#ifndef _H_PS_CORE_H_
+#define _H_PS_CORE_H_
 
-#define CONCAT_(a, b, ...) a ## b
-#define CONCAT(a,...) CONCAT_(a,__VA_ARGS__)
-#define STRINGIFY_(a) #a
-#define STRINGIFY(a, ...) STRINGIFY_(a)
+#define _ps_concat_(a, b, ...) a ## b
+#define _ps_concat(a,...) _ps_concat_(a,__VA_ARGS__)
+#define _ps_stringify_(a) #a
+#define _ps_stringify(a, ...) _ps_stringify_(a)
 
 #ifndef PS_DEF
 #define PS_DEF
 #endif // PS_DEF
 
 #ifdef __cplusplus
-#define PS_DECLTYPE_CAST(T) (decltype(T))
+#define _ps_decl_type_cast(T) (decltype(T))
 #else
-#define PS_DECLTYPE_CAST(T)
-#endif // PS_DECLTYPE_CAST
+#define _ps_decl_type_cast(T)
+#endif // _ps_decl_type_cast
 
-#ifdef __cplusplus
-#define PS_TYPEOF(...) typeof(__VA_ARGS__)
+#if defined(__cplusplus)
+#define _ps_typeof(...) typeof(__VA_ARGS__)
+#elif defined(_MSC_VER) && !defined(__clang__) && (!defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L)
+#define _ps_typeof(...) typeof(__VA_ARGS__)
 #else
-#define PS_TYPEOF(...) __typeof__(__VA_ARGS__)
-#endif // PS_TYPEOF
+#define _ps_typeof(...) __typeof__(__VA_ARGS__)
+#endif // _ps_typeof
 
 #ifdef __cplusplus
 #define PS_INLINE inline
@@ -53,59 +55,71 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PS_INLINE __inline
 #endif // PS_INLINE
 
-#ifndef PS_REALLOC
+#ifndef _ps_realloc
 #include <stdlib.h>
-#define PS_REALLOC realloc
-#endif // PS_REALLOC
+#define _ps_realloc realloc
+#endif // _ps_realloc
 
-#ifndef PS_FREE
+#ifndef _ps_free
 #include <stdlib.h>
-#define PS_FREE free
-#endif // PS_FREE
+#define _ps_free free
+#endif // _ps_free
 
-#ifndef PS_MEMCPY
+#ifndef _ps_memcpy
 #include <string.h>
-#define PS_MEMCPY memcpy
-#endif // PS_MEMCPY
+#define _ps_memcpy memcpy
+#endif // _ps_memcpy
 
-#ifndef PS_MEMSET
+#ifndef _ps_memset
 #include <string.h>
-#define PS_MEMSET memset
-#endif // PS_MEMSET
+#define _ps_memset memset
+#endif // _ps_memset
 
-#ifndef PS_ASSERT
+#ifndef _ps_assert
 #include <assert.h>
-#define PS_ASSERT assert
-#endif // PS_ASSERT
+#define _ps_assert assert
+#endif // _ps_assert
 
-#define PS_BLK(...)\
+#define _ps_blk(...)\
     do {__VA_ARGS__} while (0)
 
-#ifndef PS_UNUSED
-#define PS_UNUSED(x) (void)(x)
-#endif // PS_UNUSED
+#ifndef _ps_unused
+#define _ps_unused(x) (void)(x)
+#endif // _ps_unused
 
-#define PS_TODO(msg) \
-    PS_BLK( \
-        PS_ASSERT(!msg && "TODO: " msg); \
+#define _ps_todo(msg) \
+    _ps_blk( \
+        _ps_assert(!msg && "TODO: " msg); \
     )
 
-#define PS_UNREACHABLE() \
-    PS_BLK( \
-        PS_ASSERT(!"Unreachable code reached"); \
+#define _ps_unreachable() \
+    _ps_blk( \
+        _ps_assert(!"Unreachable code reached"); \
     )
 
-#define PS_AFTER_GOTO(stmnt, label)\
-    PS_BLK(\
-        PS_BLK(stmnt); \
+#define _ps_after_goto(stmnt, label)\
+    _ps_blk(\
+        _ps_blk(stmnt); \
         goto label;\
     )
 
-#define PS_CLOSURE_T(R,T)\
+#define _ps_closure_t(R,T)\
     struct {\
         R(*fn)(T*);\
         void *ctx;\
     }
 
+//  borrowing from nob.h here
+#if defined(__GNUC__) || defined(__clang__)
+//   https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
+#    ifdef __MINGW_PRINTF_FORMAT
+#        define _ps_printf_format(string_index, first_to_check) __attribute__ ((format (__MINGW_PRINTF_FORMAT, string_index, first_to_check)))
+#    else
+#        define _ps_printf_format(string_index, first_to_check) __attribute__ ((format (printf, string_index, first_to_check)))
+#    endif // __MINGW_PRINTF_FORMAT
+#else
+//   TODO: implement NOB_PRINTF_FORMAT for MSVC
+#    define _ps_printf_format(string_index, first_to_check)
+#endif
 
-#endif // PSCORE_H
+#endif // _H_PS_CORE_H_
