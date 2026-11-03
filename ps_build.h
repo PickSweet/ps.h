@@ -148,7 +148,7 @@ PS_DEF int ps_build_run(ps_graph_t graph) {
             if(_ps_list_get(states, next_child_idx) == 1){
                 _ps_after_goto(
                     result = -1;,
-                    defer
+                    defer_l
                 );
             }
             if (_ps_list_get(states, next_child_idx) == 0){
@@ -167,13 +167,13 @@ PS_DEF int ps_build_run(ps_graph_t graph) {
                 if (res != 0) {
                     _ps_after_goto(
                         result = res;,
-                        defer
+                        defer_l
                     );
                 }
             }
         }
     }
-    defer:
+    defer_l:
         _ps_list_free(stack);
         _ps_list_free(states);
         return result;
@@ -220,7 +220,7 @@ void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
         int err = system(*cmd);
         if (err){
             ps_file_rename(*old_exe_path, _ps_slice_get(args,0));
-            goto _exit;
+            goto return_l;
         };
 #ifdef _WIN32
         STARTUPINFOA si;
@@ -236,7 +236,7 @@ void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
 #else
         PS_TODO("Unimplemented");
 #endif
-    _exit:
+    return_l:
         _ps_list_free(cmd);
         _ps_list_free(old_exe_path);
         exit(0);
@@ -253,9 +253,9 @@ int main(int argc, char** argv) {
     };
     _ps_list_append_one(builder.graph,(ps_graph_node_t){0});
     int result = build(&builder);
-    if(result) goto defer;
+    if(result) goto defer_l;
     ps_build_run(builder.graph);
-    defer:
+    defer_l:
         return result;
 }
 
