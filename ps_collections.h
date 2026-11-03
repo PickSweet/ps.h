@@ -25,7 +25,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_COLLECTIONS_H_
 #define _H_PS_COLLECTIONS_H_
 
-#include "pscore.h"
+#include "ps_core.h"
 #include <stdio.h>
 #include <stdarg.h>
 

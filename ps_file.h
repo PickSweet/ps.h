@@ -25,8 +25,8 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_FILE_H_
 #define _H_PS_FILE_H_
 
-#include "pscore.h"
-#include "pslog.h"
+#include "ps_core.h"
+#include "ps_log.h"
 
 #include <stdio.h>
 #include <time.h>

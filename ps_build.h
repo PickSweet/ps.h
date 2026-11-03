@@ -25,16 +25,16 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_BUILD_H_
 #define _H_PS_BUILD_H_
 
-#include "pscore.h"
+#include "ps_core.h"
 
 #ifdef PS_BUILD_IMP
 #define PS_COLLECTIONS_IMP
 #define PS_LOG_IMP
 #define PS_FILE_IMP
 #endif
-#include "pscollection.h"
-#include "pslog.h"
-#include "psfile.h"
+#include "ps_collections.h"
+#include "ps_log.h"
+#include "ps_file.h"
 
 #ifndef CC
 #define CC "gcc"
