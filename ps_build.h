@@ -105,7 +105,7 @@ ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn
     node.children = (ps_list_t){0};
     _ps_list_append_one(graph,node);
     ps_idx_t new_idx = _ps_list_size(graph) - 1;
-    _ps_list_append_one(&(_ps_list_get(graph,parent)).children.items,new_idx);
+    _ps_list_append_one((ps_idx_t**)(&(_ps_list_get(graph,parent)).children.items),new_idx);
     return  new_idx;
 }
 
@@ -141,7 +141,7 @@ PS_DEF int ps_build_run(ps_graph_t graph) {
 
         // 1. If there are unvisited children, push the next child onto the stack
         if (frame->child_idx < num_children) {
-            ps_idx_t next_child_idx = _ps_list_get(&node->children.items, frame->child_idx);
+            ps_idx_t next_child_idx = _ps_list_get((ps_idx_t**)(&node->children.items), frame->child_idx);
             
             // Advance parent's child index for the next iteration
             frame->child_idx++;
