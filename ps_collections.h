@@ -38,8 +38,8 @@ typedef struct ps_slice_t {
     size_t size;
 } ps_slice_t;
 
-#define _ps_slice_size(slice_ptr) (((size_t*)(slice_ptr))[1])
-#define _ps_slice_items(slice_ptr) (*(slice_ptr))
+#define _ps_slice_size(slice_p) (((size_t*)(slice_p))[1])
+#define _ps_slice_items(slice_p) (*(slice_p))
 
 #define _ps_get_slice(items, size)\
     (ps_slice_t){\
@@ -47,40 +47,42 @@ typedef struct ps_slice_t {
         size,\
     }
 
-#define _ps_slice_skip(slice_ptr,n)\
+#define _ps_slice_skip(slice_p,n)\
     _ps_blk(\
         size_t _n = (n);\
-        _ps_assert((_n <= _ps_slice_size(slice_ptr)) && "Out of bounds!");\
-        _ps_slice_items(slice_ptr) += _n;\
-        _ps_slice_size(slice_ptr) -= n;\
+        _ps_assert((_n <= _ps_slice_size(slice_p)) && "Out of bounds!");\
+        _ps_slice_items(slice_p) += _n;\
+        _ps_slice_size(slice_p) -= n;\
     )
 
-#define _ps_slice_shrink(slice_ptr,n)\
+#define _ps_slice_shrink(slice_p,n)\
     _ps_blk(\
         size_t _n = (n);\
-        _ps_assert((_n <= _ps_slice_size(slice_ptr)) && "Out of bounds!");\
-        _ps_slice_size(slice_ptr) -= _n;\
+        _ps_assert((_n <= _ps_slice_size(slice_p)) && "Out of bounds!");\
+        _ps_slice_size(slice_p) -= _n;\
     )
 
 
-#define _ps_slice_first(slice_ptr) (_ps_slice_items(slice_ptr)[_ps_assert(_ps_slice_size(slice_ptr) > 0), 0])
-#define _ps_slice_last(slice_ptr) (_ps_slice_items(slice_ptr)[_ps_assert(_ps_slice_size(slice_ptr) > 0), _ps_slice_size(slice_ptr) - 1])
-#define _ps_slice_get(slice_ptr, index) (_ps_slice_items(slice_ptr)[_ps_assert((index) < _ps_slice_size(slice_ptr) && "Index out of bounds!"), (index)])
-#define _ps_slice_set(slice_ptr, index, value) (_ps_slice_get(slice_ptr,index) = (value))
+#define _ps_slice_first(slice_p) (_ps_slice_items(slice_p)[_ps_assert(_ps_slice_size(slice_p) > 0), 0])
+#define _ps_slice_last(slice_p) (_ps_slice_items(slice_p)[_ps_assert(_ps_slice_size(slice_p) > 0), _ps_slice_size(slice_p) - 1])
+#define _ps_slice_get(slice_p, index) (_ps_slice_items(slice_p)[_ps_assert((index) < _ps_slice_size(slice_p) && "Index out of bounds!"), (index)])
+#define _ps_slice_set(slice_p, index, value) (_ps_slice_get(slice_p,index) = (value))
 
-#define _ps_slice_sub(slice_ptr, start, end)\
+#define _ps_slice_sub(slice_p, start, end)\
     (ps_slice_t){\
-        (void*)(_ps_slice_items(slice_ptr) + (start)),\
+        (void*)(_ps_slice_items(slice_p) + (start)),\
         (end) - (start),\
     }
 
-#define _ps_slice_foreach(slice_ptr, iter)\
+#define _ps_slice_foreach(slice_p, iter)\
     for (\
-        _ps_typeof(_ps_slice_items(slice_ptr)) iter = _ps_slice_items(slice_ptr);\
-        iter < _ps_slice_items(slice_ptr) + _ps_slice_size(slice_ptr);\
+        _ps_typeof(_ps_slice_items(slice_p)) iter = _ps_slice_items(slice_p);\
+        iter < _ps_slice_items(slice_p) + _ps_slice_size(slice_p);\
         ++iter\
     )
 
+#define _ps_slice_to_unterminated(slice_p) (_ps_slice_items(slice_p))
+#define _ps_slice_to_terminated(slice_p, terminal) __i_ps_to_terminated(_ps_slice_items(slice_p), &terminal, _ps_slice_size(slice_p))
 typedef struct ps_list_t {
     void *items;
     size_t capacity;
@@ -190,9 +192,12 @@ typedef struct ps_list_t {
         ++iter\
     )
 
+#define _ps_list_to_unterminated(list_p) (_ps_list_items(list_p))
+#define _ps_list_to_terminated(list_p, terminal) __i_ps_to_terminated(_ps_list_items(list_p), &terminal, _ps_list_size(list_p))
 
 PS_DEF void ps_str_append_fmt( char **str, const char *fmt, ...) _ps_printf_format(2, 3);
 PS_DEF isize_t ps_str_find_last(char **str, const char *delim);
+PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, size_t size);
 
 #ifdef PS_COLLECTIONS_IMP
 PS_DEF void ps_str_append_fmt(char** str, const char *fmt, ...) {
@@ -230,6 +235,15 @@ PS_DEF isize_t ps_str_find_last(char **str, const char *delim){
 return_l:
     _ps_free(check);
     return start;
+}
+
+PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, size_t size){
+    void* result = _ps_realloc(NULL, size + 1);
+    if (result) {
+        _ps_memcpy(result, ptr, size);
+        _ps_memcpy((char*)result + size, terminal, 1);
+    }
+    return result;
 }
 
 #endif // PS_COLLECTIONS_IMP
