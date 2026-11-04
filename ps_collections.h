@@ -81,6 +81,7 @@ typedef struct ps_slice_t {
         ++iter\
     )
 
+
 #define _ps_slice_to_unterminated(slice_p) (_ps_slice_items(slice_p))
 #define _ps_slice_to_terminated(slice_p, terminal) __i_ps_to_terminated(_ps_slice_items(slice_p), &terminal, _ps_slice_size(slice_p))
 typedef struct ps_list_t {
@@ -194,10 +195,12 @@ typedef struct ps_list_t {
 
 #define _ps_list_to_unterminated(list_p) (_ps_list_items(list_p))
 #define _ps_list_to_terminated(list_p, terminal) __i_ps_to_terminated(_ps_list_items(list_p), &terminal, _ps_list_size(list_p))
+#define _ps_list_clone(list_p) (_ps_typeof(list_p))__i_ps_list_clone((void**)(list_p), sizeof(_ps_typeof(*_ps_list_items(list_p))))
 
 PS_DEF void ps_str_append_fmt( char **str, const char *fmt, ...) _ps_printf_format(2, 3);
 PS_DEF isize_t ps_str_find_last(char **str, const char *delim);
 PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, size_t size);
+PS_DEF ps_list_t __i_ps_list_clone( void **list, size_t item_size);
 
 #ifdef PS_COLLECTIONS_IMP
 PS_DEF void ps_str_append_fmt(char** str, const char *fmt, ...) {
@@ -242,6 +245,16 @@ PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, size_t size){
     if (result) {
         _ps_memcpy(result, ptr, size);
         _ps_memcpy((char*)result + size, terminal, 1);
+    }
+    return result;
+}
+
+PS_DEF ps_list_t __i_ps_list_clone( void **list, size_t item_size){
+    ps_list_t result = {0};
+    if (list && _ps_list_size(list) > 0) {
+        result.items = _ps_realloc(result.items, _ps_list_size(list) * item_size);
+        _ps_memcpy(result.items, _ps_list_items(list), _ps_list_size(list) * item_size);
+        _ps_list_size(&result) = _ps_list_size(list);
     }
     return result;
 }
