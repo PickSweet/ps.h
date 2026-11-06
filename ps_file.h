@@ -176,7 +176,7 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
 #ifdef _WIN32
     ps_path_list_t result = {0};
     if (!dir || !blob) goto return_l;
-    const size_t dir_len = strlen(dir);
+    const ps_size_t dir_len = strlen(dir);
     if (dir_len == 0 || (dir[dir_len - 1] != PS_PATH_SEP && dir[dir_len - 1] != PS_ALT_PATH_SEP) || !ps_dir_exists(dir)) goto return_l;
     ps_path_t **r_ptr = (ps_path_t **)&result;
     const char ***dir_stack = ((const char***)&((ps_list_t){0}));
@@ -189,7 +189,7 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
     do {
         const char *current_dir = _ps_list_pop(dir_stack);
         if (!current_dir) break;
-        const size_t current_dir_len = strlen(current_dir);
+        const ps_size_t current_dir_len = strlen(current_dir);
         _ps_list_size(search_blob) = 0;
         _ps_list_append_many(search_blob, current_dir, current_dir_len + 2);
         _ps_list_set(search_blob, current_dir_len, '*');
@@ -219,7 +219,7 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
                 }
             }else{
                 if (ps_glob_match(blob, find_data.cFileName)){
-                    size_t str_len = strlen(find_data.cFileName);
+                    ps_size_t str_len = strlen(find_data.cFileName);
                     ps_path_t file_path = {0};
                     _ps_list_append_many(&file_path.items, current_dir, current_dir_len);
                     _ps_list_append_many(&file_path.items, find_data.cFileName, str_len + 1);

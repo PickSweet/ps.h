@@ -43,7 +43,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 typedef int (*psb_fn_t)(void*);
-typedef size_t ps_idx_t;
+typedef ps_size_t ps_idx_t;
 typedef struct ps_graph_node_t {
     _ps_closure_t(int, void) closure;
     ps_list_t children;
@@ -59,7 +59,7 @@ typedef struct ps_builder_t {
     ps_graph_t graph;
 } ps_builder_t;
 
-ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx, size_t ctx_size);
+ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx, ps_size_t ctx_size);
 void psb_free(ps_graph_t graph);
 
 
@@ -79,7 +79,7 @@ void psb_free(ps_graph_t graph);
 
 typedef struct ps_build_frame_t{
     ps_idx_t node_idx;
-    size_t child_idx; // Tracks which child we are currently visiting
+    ps_size_t child_idx; // Tracks which child we are currently visiting
 } ps_build_frame_t;
 
 PS_DEF int ps_build_run(ps_graph_t graph);
@@ -97,7 +97,7 @@ int ps_build_shell_cmd_fn(const char **ctx);
 #define PS_SRC_FILE() __FILE__
 #define _ps_build_rebuild_yourself(args) __i_ps_build_rebuild_yourself(args, __FILE__);
 
-ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx,size_t ctx_size){
+ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx,ps_size_t ctx_size){
     void *ctx_cp = _ps_realloc(NULL,ctx_size);
     _ps_memcpy(ctx_cp,ctx,ctx_size);
     ps_graph_node_t node = {0};
@@ -139,7 +139,7 @@ PS_DEF int ps_build_run(ps_graph_t graph) {
         ps_build_frame_t *frame = &_ps_list_last(stack);
         ps_graph_node_t *node = &_ps_list_get(graph,frame->node_idx);
 
-        size_t num_children = _ps_list_size(&node->children.items);
+        ps_size_t num_children = _ps_list_size(&node->children.items);
 
         // 1. If there are unvisited children, push the next child onto the stack
         if (frame->child_idx < num_children) {
@@ -186,7 +186,7 @@ int ps_build_shell_cmd_fn(const char **ctx) {
 
     const char **p = ctx;
     while (*p != NULL) {
-        size_t len = strlen(*p);
+        ps_size_t len = strlen(*p);
         if (_ps_list_size(scratch) > 0) {
             _ps_list_append_one(scratch, ' ');
         }

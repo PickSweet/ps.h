@@ -141,11 +141,11 @@ typedef PS_HALF_SIZE_T ps_ihalf_t;
 typedef unsigned PS_HALF_SIZE_T ps_half_t;
 
 
-PS_DEF int ps_mem_eql(const void *a, const void *b, size_t size);
+PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size);
 
 #ifdef PS_CORE_IMP
 
-PS_DEF int ps_mem_eql(const void *a, const void *b, size_t size) {
+PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
     if (a == b)return 1;
     if (size == 0) return 1;
     if (!a || !b) return 0;
