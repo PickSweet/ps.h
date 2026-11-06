@@ -91,7 +91,7 @@ int ps_build_shell_cmd_fn(const char **ctx);
 
 
 #define _ps_build_append_child_shell_cmd(builder,parent_idx, ...)\
-    _ps_build_append_child_cmd_with_ctx(builder,parent_idx, psb_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
+    _ps_build_append_child_cmd_with_ctx(builder,parent_idx, ps_build_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
 
 #ifdef PS_BUILD_IMP
 #define PS_SRC_FILE() __FILE__
