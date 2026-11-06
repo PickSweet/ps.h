@@ -25,13 +25,13 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_BUILD_H_
 #define _H_PS_BUILD_H_
 
-#include "ps_core.h"
-
 #ifdef PS_BUILD_IMP
+#define PS_CORE_IMP
 #define PS_COLLECTIONS_IMP
 #define PS_LOG_IMP
 #define PS_FILE_IMP
 #endif
+#include "ps_core.h"
 #include "ps_collections.h"
 #include "ps_log.h"
 #include "ps_file.h"
@@ -193,6 +193,7 @@ int ps_build_shell_cmd_fn(const char **ctx) {
     }
     _ps_list_append_one(scratch, '\0');
     char *cmd = *scratch;
+    ps_path_normalize_sep(cmd);
     ps_log(PS_LOG_INFO, "Executing: %s\n", cmd);
     int ret = system(cmd);
     _ps_list_free(scratch);
@@ -208,16 +209,17 @@ int __i_ps_build_needs_rebuild(char  ***args, const char *src_file){
 void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
     if (__i_ps_build_needs_rebuild(args, src_file)){
         ps_log(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, _ps_slice_get(args,0));
-        size_t exe_path_len = strlen(_ps_slice_get(args,0));
         char **cmd = (char**)(&(ps_list_t){0});
         char ** old_exe_path = (char**)(&(ps_list_t){0});
-        ps_str_append_fmt(cmd, "%s %s -o %s", CC, src_file, _ps_slice_get(args,0));
+        ps_str_append_fmt(cmd, "%s %s -o %s", CC, src_file, _ps_slice_get(args,0));;
         ps_str_append_fmt(old_exe_path, "%s.old", _ps_slice_get(args,0));
+        ps_log(PS_LOG_INFO, "Rebuild command: %s\n", *cmd);
         if (ps_file_exists(*old_exe_path)){
             ps_file_delete(*old_exe_path);
         }
         ps_file_rename(_ps_slice_get(args,0), *old_exe_path);
         int err = system(*cmd);
+        ps_log(PS_LOG_INFO, "Rebuild command exited with code %d\n", err);
         if (err){
             ps_file_rename(*old_exe_path, _ps_slice_get(args,0));
             goto return_l;
@@ -228,9 +230,12 @@ void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
-        if (!CreateProcessA(NULL,_ps_slice_get(args,0),NULL,NULL,0,0,NULL,NULL,&si,&pi)){
+        char * arg0 = strdup(_ps_slice_get(args,0));
+        if (!CreateProcessA(NULL,arg0,NULL,NULL,0,0,NULL,NULL,&si,&pi)){
             ps_log(PS_LOG_INFO, "Unable to restart %s", _ps_slice_get(args,0));
         }
+        _ps_free(arg0);
+        ps_log(PS_LOG_INFO, "Restarting %s\n", _ps_slice_get(args,0));
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
 #else
