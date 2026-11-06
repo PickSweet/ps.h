@@ -37,7 +37,9 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "ps_file.h"
 
 #ifndef CC
-#define CC "gcc"
+#define PS_BUILD_CC "gcc"
+#else
+#define PS_BUILD_CC _ps_stringify(CC)
 #endif
 
 typedef int (*psb_fn_t)(void*);
@@ -211,7 +213,7 @@ void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
         ps_log(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, _ps_slice_get(args,0));
         char **cmd = (char**)(&(ps_list_t){0});
         char ** old_exe_path = (char**)(&(ps_list_t){0});
-        ps_str_append_fmt(cmd, "%s %s -o %s", CC, src_file, _ps_slice_get(args,0));;
+        ps_str_append_fmt(cmd, "%s %s -o %s", PS_BUILD_CC, src_file, _ps_slice_get(args,0));;
         ps_str_append_fmt(old_exe_path, "%s.old", _ps_slice_get(args,0));
         ps_log(PS_LOG_INFO, "Rebuild command: %s\n", *cmd);
         if (ps_file_exists(*old_exe_path)){
