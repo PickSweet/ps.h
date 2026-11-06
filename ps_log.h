@@ -25,6 +25,10 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_LOG_H_
 #define _H_PS_LOG_H_
 
+#ifdef PS_LOG_IMP
+#define PS_CORE_IMP
+#endif // PS_LOG_IMP
+
 #include "ps_core.h"
 
 #include <stdarg.h>
