@@ -119,6 +119,26 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #else
 //   TODO: implement NOB_PRINTF_FORMAT for MSVC
 #    define _ps_printf_format(string_index, first_to_check)
-#endif
+#endif // _ps_printf_format
+
+
+PS_DEF int ps_mem_eql(const void *a, const void *b, size_t size);
+
+#ifdef PS_CORE_IMP
+
+PS_DEF int ps_mem_eql(const void *a, const void *b, size_t size) {
+    if (a == b)return 1;
+    if (size == 0) return 1;
+    if (!a || !b) return 0;
+    const char* ba = (const char*)a;
+    const char* bb = (const char*)b;
+    char cmp = 0;
+    do {
+        cmp |= *ba++ ^ *bb++;
+    } while (--size && !cmp);
+    return !cmp;
+}
+
+#endif // PS_CORE_IMP
 
 #endif // _H_PS_CORE_H_
