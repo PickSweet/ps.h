@@ -121,6 +121,19 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #    define _ps_printf_format(string_index, first_to_check)
 #endif // _ps_printf_format
 
+#ifndef PS_FULL_SIZE_T
+#define PS_FULL_SIZE_T long long
+#endif // PS_FULL_SIZE_T
+
+#ifndef PS_HALF_SIZE_T
+#define PS_HALF_SIZE_T int
+#endif // PS_HALF_SIZE_T
+
+typedef PS_FULL_SIZE_T ps_isize_t;
+typedef unsigned PS_FULL_SIZE_T ps_size_t;
+typedef PS_HALF_SIZE_T ps_ihalf_t;
+typedef unsigned PS_HALF_SIZE_T ps_half_t;
+
 
 PS_DEF int ps_mem_eql(const void *a, const void *b, size_t size);
 
