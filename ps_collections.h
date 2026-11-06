@@ -25,20 +25,26 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_COLLECTIONS_H_
 #define _H_PS_COLLECTIONS_H_
 
+#ifdef PS_COLLECTIONS_IMP
+#define PS_CORE_IMP
+#define PS_LOG_IMP
+#endif // PS_COLLECTIONS_IMP
+
 #include "ps_core.h"
+#include "ps_log.h"
 #include <stdio.h>
 #include <stdarg.h>
 
-typedef ptrdiff_t isize_t;
 
 #define _ps_array_size(array) (sizeof(array) / sizeof((array)[0]))
 
 typedef struct ps_slice_t {
     void *items;
-    size_t size;
+    ps_half_t size;
 } ps_slice_t;
 
-#define _ps_slice_size(slice_p) (((size_t*)(slice_p))[1])
+#define _ps_slice_size(slice_p) (((ps_half_t*)(((ps_size_t*)(slice_p)) + 1))[0])
+#define _ps_slice_item_size(slice_p) (sizeof(*(*(slice_p))))
 #define _ps_slice_items(slice_p) (*(slice_p))
 
 #define _ps_get_slice(items, size)\
@@ -49,15 +55,15 @@ typedef struct ps_slice_t {
 
 #define _ps_slice_skip(slice_p,n)\
     _ps_blk(\
-        size_t _n = (n);\
+        ps_half_t _n = (n);\
         _ps_assert((_n <= _ps_slice_size(slice_p)) && "Out of bounds!");\
         _ps_slice_items(slice_p) += _n;\
-        _ps_slice_size(slice_p) -= n;\
+        _ps_slice_size(slice_p) -= _n;\
     )
 
 #define _ps_slice_shrink(slice_p,n)\
     _ps_blk(\
-        size_t _n = (n);\
+        ps_half_t _n = (n);\
         _ps_assert((_n <= _ps_slice_size(slice_p)) && "Out of bounds!");\
         _ps_slice_size(slice_p) -= _n;\
     )
@@ -83,15 +89,28 @@ typedef struct ps_slice_t {
 
 
 #define _ps_slice_to_unterminated(slice_p) (_ps_slice_items(slice_p))
-#define _ps_slice_to_terminated(slice_p, terminal) __i_ps_to_terminated(_ps_slice_items(slice_p), &terminal, _ps_slice_size(slice_p))
+#define _ps_slice_to_terminated(slice_p, terminal) (_ps_typeof(_ps_slice_items(slice_p)))__i_ps_to_terminated(_ps_slice_items(slice_p), &(terminal),_ps_slice_item_size(slice_p), _ps_slice_size(slice_p))
 typedef struct ps_list_t {
     void *items;
-    size_t capacity;
-    size_t size;
+    ps_half_t capacity;
+    ps_half_t size;
 } ps_list_t;
 
-#define _ps_list_capacity(list_p) (((size_t*)(list_p))[1])
-#define _ps_list_size(list_p) (((size_t*)(list_p))[2])
+typedef struct ps_list_list_t {
+    ps_list_t *items;
+    ps_half_t capacity;
+    ps_half_t size;
+} ps_list_list_t;
+
+typedef struct ps_list_slice_t {
+    ps_slice_t *items;
+    ps_half_t capacity;
+    ps_half_t size;
+} ps_list_slice_t;
+
+#define _ps_list_capacity(list_p) (((ps_half_t*)(((ps_size_t*)(list_p)) + 1))[0])
+#define _ps_list_size(list_p) (((ps_half_t*)(((ps_size_t*)(list_p)) + 1))[1])
+#define _ps_list_item_size(list_p) (sizeof(*(*(list_p))))
 #define _ps_list_items(list_p) (*(list_p))
 
 #define _ps_list_free(list_p)\
@@ -108,7 +127,7 @@ typedef struct ps_list_t {
 #define _ps_list_reserve_precise(list_p, new_capacity)\
     _ps_blk(\
         if (_ps_list_capacity(list_p) < (new_capacity)){\
-            void *_new_ptr = _ps_realloc(_ps_list_items(list_p), (new_capacity) * sizeof(*_ps_list_items(list_p)));\
+            void *_new_ptr = _ps_realloc(_ps_list_items(list_p), (new_capacity) * _ps_list_item_size(list_p));\
             _ps_assert(_new_ptr != NULL && "Failed to reallocate memory for list!");\
             _ps_list_items(list_p) = (_ps_typeof(_ps_list_items(list_p)))(_new_ptr);\
             _ps_list_capacity(list_p) = (new_capacity);\
@@ -117,13 +136,13 @@ typedef struct ps_list_t {
 
 #define _ps_list_reserve(list_p, new_capacity)\
     _ps_blk(\
-        size_t *list_capacity_ptr = &_ps_list_capacity(list_p);\
-        if (*list_capacity_ptr < (new_capacity)){\
-            size_t target_capacity;\
-            if (*list_capacity_ptr == 0){\
+        ps_half_t list_capacity = _ps_list_capacity(list_p);\
+        if (list_capacity < (new_capacity)){\
+            ps_half_t target_capacity;\
+            if (list_capacity == 0){\
                 target_capacity = 1;\
             } else {\
-                target_capacity = *list_capacity_ptr;\
+                target_capacity = list_capacity;\
             }\
             while (new_capacity > target_capacity){\
                 target_capacity *= 2;\
@@ -146,9 +165,9 @@ typedef struct ps_list_t {
     )
 #define _ps_list_append_many(list_p, values, count)\
     _ps_blk(\
-        _ps_assert(sizeof((values)[0]) == sizeof(*_ps_list_items(list_p)) && "Appending values to list of incompatible type.");\
+        _ps_assert(sizeof((values)[0]) == _ps_list_item_size(list_p) && "Appending values to list of incompatible type.");\
         _ps_list_reserve(list_p,_ps_list_size(list_p) + (count));\
-        _ps_memcpy(_ps_list_items(list_p) + _ps_list_size(list_p), values, (count) * sizeof(*_ps_list_items(list_p)));\
+        _ps_memcpy(_ps_list_items(list_p) + _ps_list_size(list_p), values, (count) * _ps_list_item_size(list_p));\
         _ps_list_size(list_p)+=(count);\
     )
 
@@ -194,13 +213,19 @@ typedef struct ps_list_t {
     )
 
 #define _ps_list_to_unterminated(list_p) (_ps_list_items(list_p))
-#define _ps_list_to_terminated(list_p, terminal) __i_ps_to_terminated(_ps_list_items(list_p), &terminal, _ps_list_size(list_p))
-#define _ps_list_clone(list_p) (_ps_typeof(list_p))__i_ps_list_clone((void**)(list_p), sizeof(_ps_typeof(*_ps_list_items(list_p))))
+#define _ps_list_to_terminated(list_p, terminal) __i_ps_to_terminated(_ps_list_items(list_p), &terminal, _ps_list_item_size(list_p), _ps_list_size(list_p))
+#define _ps_list_clone(list_p) (_ps_typeof(list_p))__i_ps_list_clone((void**)(list_p), _ps_list_item_size(list_p))
+#define _ps_list_split(list_p, delimiter) __i_ps_list_split((void**)(list_p), _ps_list_item_size(list_p), (void*)(delimiter))
+#define _ps_list_find(list_p, value) __i_ps_list_find((void**)(list_p), _ps_list_item_size(list_p), (void*)(value), 1)
+#define _ps_list_find_last(list_p, value) __i_ps_list_find((void**)(list_p), _ps_list_item_size(list_p), (void*)(value), -1)
+
 
 PS_DEF void ps_str_append_fmt( char **str, const char *fmt, ...) _ps_printf_format(2, 3);
-PS_DEF isize_t ps_str_find_last(char **str, const char *delim);
-PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, size_t size);
-PS_DEF ps_list_t __i_ps_list_clone( void **list, size_t item_size);
+PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, ps_half_t item_size, ps_half_t size);
+PS_DEF ps_list_t __i_ps_list_clone( void **list, ps_half_t item_size);
+PS_DEF ps_list_slice_t __i_ps_list_split(void **list, ps_half_t item_size, void* delimiter);
+PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value, ps_ihalf_t direction);
+
 
 #ifdef PS_COLLECTIONS_IMP
 PS_DEF void ps_str_append_fmt(char** str, const char *fmt, ...) {
@@ -210,9 +235,8 @@ PS_DEF void ps_str_append_fmt(char** str, const char *fmt, ...) {
     va_copy(args_copy, args);
     int len = vsnprintf(NULL, 0, fmt, args_copy);
     va_end(args_copy);
-
     if (len > 0) {
-        size_t old_size = _ps_list_size(str);
+        ps_half_t old_size = _ps_list_size(str);
         if (old_size > 0 && _ps_list_items(str)[old_size - 1] == '\0') {
             old_size--;
         }
@@ -224,32 +248,16 @@ PS_DEF void ps_str_append_fmt(char** str, const char *fmt, ...) {
     va_end(args);
 }
 
-PS_DEF isize_t ps_str_find_last(char **str, const char *delim){
-    size_t delim_size = strlen(delim);
-    isize_t start = _ps_list_size(str) - delim_size;
-    char* check = (char *)_ps_realloc(NULL, delim_size + 1);
-    check[delim_size] = 0;
-    do {
-        _ps_memcpy(check, _ps_list_items(str) + start, delim_size);
-        if (!strcmp(check, delim)){
-            goto return_l;
-        }
-    } while (--start);
-return_l:
-    _ps_free(check);
-    return start;
-}
-
-PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, size_t size){
-    void* result = _ps_realloc(NULL, size + 1);
+PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, ps_half_t item_size, ps_half_t size){
+    void* result = _ps_realloc(NULL, size * item_size);
     if (result) {
-        _ps_memcpy(result, ptr, size);
-        _ps_memcpy((char*)result + size, terminal, 1);
+        _ps_memcpy(result, ptr, size * item_size);
+        _ps_memcpy((char*)result + size * item_size, terminal, item_size);
     }
     return result;
 }
 
-PS_DEF ps_list_t __i_ps_list_clone( void **list, size_t item_size){
+PS_DEF ps_list_t __i_ps_list_clone( void **list, ps_half_t item_size){
     ps_list_t result = {0};
     if (list && _ps_list_size(list) > 0) {
         result.items = _ps_realloc(result.items, _ps_list_size(list) * item_size);
@@ -257,6 +265,44 @@ PS_DEF ps_list_t __i_ps_list_clone( void **list, size_t item_size){
         _ps_list_size(&result) = _ps_list_size(list);
     }
     return result;
+}
+
+PS_DEF ps_list_slice_t __i_ps_list_split(void **list, ps_half_t item_size, void* delimiter) {
+    ps_list_slice_t result = {0};
+    ps_slice_t **r_ptr = (ps_slice_t **)&result;
+    ps_half_t list_size = _ps_list_size(list);
+    ps_half_t i = 0;
+    if (list_size == 0) return result;
+    ps_slice_t current = {0};
+    current.items = *list;
+    char *list_bytes = (char *)_ps_list_items(list);
+    while (i < list_size * item_size) {
+        if (ps_mem_eql(list_bytes + i, delimiter, item_size)) {
+            // Handle split logic here
+            _ps_list_append_one(r_ptr, current);
+            current = (ps_slice_t){0};
+            i += item_size;
+            current.items = list_bytes + i;
+            continue;
+        }
+        i += item_size;
+        current.size += 1;
+    }
+    if (current.size > 0) {
+        _ps_list_append_one(r_ptr, current);
+    }
+    return result;
+}
+
+PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value, ps_ihalf_t direction){
+    ps_ihalf_t i = direction > 0 ? 0 : _ps_list_size(list) - 1;
+    while (i >= 0 && i < _ps_list_size(list)) {
+        if (ps_mem_eql(_ps_list_items(list) + i * item_size, value, item_size)) {
+            return i;
+        }
+        i += direction;
+    }
+    return -1;
 }
 
 #endif // PS_COLLECTIONS_IMP
