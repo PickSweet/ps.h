@@ -26,6 +26,12 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_CORE_H_
 #define _H_PS_CORE_H_
 
+#define _ps_stringify0(x) #x
+#define _ps_stringify(x) _ps_stringify0(x)
+
+#define _ps_concat0(a, b) a##b
+#define _ps_concat(a, b) _ps_concat0(a, b)
+
 #ifndef PS_DEF
 #define PS_DEF
 #endif // PS_DEF
