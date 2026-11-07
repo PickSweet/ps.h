@@ -60,6 +60,8 @@ typedef struct ps_builder_t {
 } ps_builder_t;
 
 ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx, ps_size_t ctx_size);
+ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *list_items, ps_size_t item_size, ps_size_t list_size);
+
 void psb_free(ps_graph_t graph);
 
 
@@ -74,8 +76,14 @@ void psb_free(ps_graph_t graph);
 #define _ps_build_append_child_cmd_with_ctx(builder, parent_idx, p_fn, T, ...)\
     __i_ps_build_append_child_cmd((builder)->graph, parent_idx, (psb_fn_t)(p_fn), (void *)&((T){__VA_ARGS__}),sizeof((T){__VA_ARGS__}))
 
+#define _ps_build_append_child_cmd_list(builder, parent_idx, p_fn, list)\
+    __i_ps_build_append_child_cmd_list((builder)->graph, parent_idx, (psb_fn_t)(p_fn), (void *)(*(list)), _ps_list_item_size(list), _ps_list_size(list))
+
 #define _ps_build_append_cmd_with_ctx(builder,p_fn,T,...)\
     _ps_build_append_child_cmd_with_ctx(builder,0,p_fn,T,__VA_ARGS__)
+
+#define _ps_build_append_cmd_list(builder,p_fn,list)\
+    _ps_build_append_child_cmd_list(builder,0,p_fn,list)
 
 #define _ps_build_append_group(builder)\
     _ps_build_append_child_cmd(builder,0,NULL)
@@ -116,6 +124,21 @@ ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn
     _ps_list_append_one((ps_idx_t**)(&(_ps_list_get(graph,parent)).children.items),new_idx);
     return  new_idx;
 }
+
+ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *list_items, ps_size_t item_size, ps_size_t list_size){
+    void *ctx_cp = _ps_realloc(NULL,item_size * list_size);
+    _ps_memcpy(ctx_cp,list_items,item_size * list_size);
+    ps_graph_node_t node = {0};
+    node.closure.fn = fn;
+    node.closure.ctx = ctx_cp;
+    node.parent = parent;
+    node.children = (ps_list_t){0};
+    _ps_list_append_one(graph,node);
+    ps_idx_t new_idx = _ps_list_size(graph) - 1;
+    _ps_list_append_one((ps_idx_t**)(&(_ps_list_get(graph,parent)).children.items),new_idx);
+    return  new_idx;
+}
+
 
 void psb_free(ps_graph_t graph){
     _ps_list_foreach(graph, node){
