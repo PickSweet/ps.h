@@ -91,14 +91,22 @@ void psb_free(ps_graph_t graph);
 #define _ps_build_append_child_group(builder,parent_idx)\
     _ps_build_append_child_cmd(builder,parent_idx,NULL)
 
-#define _ps_build_free_after_run(builder,free_fn_ptr, ptr)\
+
+// Add a node to the graph that will free its context (which happens to be this pointer) after running
+#define _ps_build_free_after_run(builder, ptr)\
     _ps_blk(\
-        _ps_graph_node_t node = {0};\
-        node.closure.fn = (psb_fn_t)(free_fn_ptr);\
+        if (ptr == NULL) {\
+            ps_log(PS_LOG_ERROR, "Attempted to free NULL ptr at %s:%d\n", __FILE__, __LINE__);\
+            exit(1);\
+        }\
+        ps_graph_node_t node = {0};\
+        node.closure.fn = NULL;\
         node.closure.ctx = (void *)(ptr);\
         node.parent = 0;\
         node.children = (ps_list_t){0};\
+        ps_idx_t node_idx = _ps_list_size((builder)->graph);\
         _ps_list_append_one((builder)->graph,node);\
+        _ps_list_append_one((ps_idx_t**)(&(_ps_list_get((builder)->graph,0)).children.items),node_idx);\
     )
 typedef struct ps_build_frame_t{
     ps_idx_t node_idx;
@@ -133,8 +141,8 @@ ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn
     node.closure.ctx = ctx_cp;
     node.parent = parent;
     node.children = (ps_list_t){0};
+    ps_idx_t new_idx = _ps_list_size(graph);
     _ps_list_append_one(graph,node);
-    ps_idx_t new_idx = _ps_list_size(graph) - 1;
     _ps_list_append_one((ps_idx_t**)(&(_ps_list_get(graph,parent)).children.items),new_idx);
     return  new_idx;
 }
@@ -148,8 +156,8 @@ ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, p
     node.closure.ctx = ctx_cp;
     node.parent = parent;
     node.children = (ps_list_t){0};
+    ps_idx_t new_idx = _ps_list_size(graph);
     _ps_list_append_one(graph,node);
-    ps_idx_t new_idx = _ps_list_size(graph) - 1;
     _ps_list_append_one((ps_idx_t**)(&(_ps_list_get(graph,parent)).children.items),new_idx);
     return  new_idx;
 }
