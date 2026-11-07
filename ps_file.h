@@ -151,7 +151,7 @@ PS_DEF int ps_dir_ensure(const char *path){
     DWORD error = GetLastError();
     if (error == ERROR_ALREADY_EXISTS){
         ps_log(PS_LOG_INFO, "Directory %s already exits\n", path);
-        return 0;
+        return 1;
     }
     ps_log(PS_LOG_ERROR, "Unable to create directory %s, %d\n", path, error);
     return 0;
