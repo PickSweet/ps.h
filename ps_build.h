@@ -282,17 +282,26 @@ void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
 #ifdef _WIN32
         STARTUPINFOA si;
         PROCESS_INFORMATION pi;
+        char **restart_cmd = (char**)(&(ps_list_t){0});
+        _ps_slice_foreach(args, arg){
+            _ps_list_append_many(restart_cmd, *arg, strlen(*arg));
+            _ps_list_append_one(restart_cmd, ' ');
+        }
+        _ps_list_append_one(restart_cmd, '\0');
+        ps_log(PS_LOG_INFO, "Restarting: %s\n", *restart_cmd);
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
-        char * arg0 = strdup(_ps_slice_get(args,0));
-        if (!CreateProcessA(NULL,arg0,NULL,NULL,0,0,NULL,NULL,&si,&pi)){
-            ps_log(PS_LOG_INFO, "Unable to restart %s", _ps_slice_get(args,0));
+        if (!CreateProcessA(NULL,*restart_cmd,NULL,NULL,0,0,NULL,NULL,&si,&pi)){
+            ps_log(PS_LOG_INFO, "Unable to restart %s (%lu)\n", _ps_slice_get(args,0), GetLastError());
+            _ps_list_free(restart_cmd);
+            goto return_l;
+        }else{
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
         }
-        _ps_free(arg0);
-        ps_log(PS_LOG_INFO, "Restarting %s\n", _ps_slice_get(args,0));
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
+        _ps_list_free(restart_cmd);
 #else
         PS_TODO("Unimplemented");
 #endif
