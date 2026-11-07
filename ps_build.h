@@ -77,6 +77,11 @@ void psb_free(ps_graph_t graph);
 #define _ps_build_append_cmd_with_ctx(builder,p_fn,T,...)\
     _ps_build_append_child_cmd_with_ctx(builder,0,p_fn,T,__VA_ARGS__)
 
+#define _ps_build_append_group(builder)\
+    _ps_build_append_child_cmd(builder,0,NULL)
+
+#define _ps_build_append_child_group(builder,parent_idx)\
+    _ps_build_append_child_cmd(builder,parent_idx,NULL)
 typedef struct ps_build_frame_t{
     ps_idx_t node_idx;
     ps_size_t child_idx; // Tracks which child we are currently visiting
@@ -92,6 +97,7 @@ int ps_build_shell_cmd_fn(const char **ctx);
 
 #define _ps_build_append_child_shell_cmd(builder,parent_idx, ...)\
     _ps_build_append_child_cmd_with_ctx(builder,parent_idx, ps_build_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
+
 
 #ifdef PS_BUILD_IMP
 #define PS_SRC_FILE() __FILE__
