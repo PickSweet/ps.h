@@ -90,6 +90,16 @@ void psb_free(ps_graph_t graph);
 
 #define _ps_build_append_child_group(builder,parent_idx)\
     _ps_build_append_child_cmd(builder,parent_idx,NULL)
+
+#define _ps_build_free_after_run(builder,free_fn_ptr, ptr)\
+    _ps_blk(\
+        _ps_graph_node_t node = {0};\
+        node.closure.fn = (psb_fn_t)(free_fn_ptr);\
+        node.closure.ctx = (void *)(ptr);\
+        node.parent = 0;\
+        node.children = (ps_list_t){0};\
+        _ps_list_append_one((builder)->graph,node);\
+    )
 typedef struct ps_build_frame_t{
     ps_idx_t node_idx;
     ps_size_t child_idx; // Tracks which child we are currently visiting
