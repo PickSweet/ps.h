@@ -52,7 +52,11 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PS_ALT_PATH_SEP '\\'
 #endif
 
-typedef ps_list_t ps_path_t;
+typedef struct {
+    char *items;
+    ps_half_t capacity;
+    ps_half_t size;
+} ps_path_t;
 
 typedef struct ps_path_list_t {
     ps_path_t *items;
@@ -135,7 +139,7 @@ PS_DEF int ps_dir_create(const char *path){
         ps_log(PS_LOG_INFO, "Created directory %s\n", path);
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to create directory %s, %d\n", path, GetLastError());
+    ps_log(PS_LOG_ERROR, "Unable to create directory %s, %lu\n", path, GetLastError());
     return 0;
 #else
     PS_TODO("Unimplemented");
@@ -153,7 +157,7 @@ PS_DEF int ps_dir_ensure(const char *path){
         ps_log(PS_LOG_INFO, "Directory %s already exits\n", path);
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to create directory %s, %d\n", path, error);
+    ps_log(PS_LOG_ERROR, "Unable to create directory %s, %lu\n", path, error);
     return 0;
 #else
     PS_TODO("Unimplemented");
@@ -167,8 +171,10 @@ PS_DEF int ps_dir_delete(const char *path){
         return 1;
     }
     ps_log(PS_LOG_ERROR, "Unable to delete directory %s\n", path);
+    return 0;
 #else
     PS_TODO("Unimplemented");
+    return 0;
 #endif
 }
 
@@ -197,7 +203,7 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
         // Process the current directory here
         PS_HANDLE iter = FindFirstFile(*search_blob, &find_data);
         if (iter == INVALID_HANDLE_VALUE){
-            ps_log(PS_LOG_ERROR, "Failed to open directory %s. (%d)\n", *search_blob, GetLastError());
+            ps_log(PS_LOG_ERROR, "Failed to open directory %s. (%lu)\n", *search_blob, GetLastError());
             _ps_after_goto(
                 _ps_free((void *)current_dir);
                 _ps_list_foreach(dir_stack, item){
@@ -255,8 +261,10 @@ PS_DEF int ps_file_delete(const char *path){
         return 1;
     }
     ps_log(PS_LOG_ERROR, "Unable to delete file %s\n", path);
+    return 0;
 #else
     PS_TODO("Unimplemented");
+    return 0;
 #endif
 }
 
@@ -265,9 +273,11 @@ PS_DEF int ps_file_rename(const char *src_path, const char *dest_path){
     if (MoveFileA(src_path, dest_path)){
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to rename file %s to %s (%d)\n", src_path, dest_path, GetLastError());
+    ps_log(PS_LOG_ERROR, "Unable to rename file %s to %s (%lu)\n", src_path, dest_path, GetLastError());
+    return 0;
 #else
     PS_TODO("Unimplemented");
+    return 0;
 #endif
 }
 
@@ -275,8 +285,8 @@ PS_DEF time_t ps_file_get_mod_time(const char *path){
 #ifdef _WIN32
     WIN32_FILE_ATTRIBUTE_DATA file_info;
     if (!GetFileAttributesExA(path, GetFileExInfoStandard, &file_info)){
-        ps_log(PS_LOG_ERROR, "Unable to get file mod time for %s, (%d)\n", path, GetLastError());
-        return (time_t)-1;
+        ps_log(PS_LOG_ERROR, "Unable to get file mod time for %s, (%lu)\n", path, GetLastError());
+        return 0;
     }
 
     ULARGE_INTEGER ull;
@@ -291,6 +301,7 @@ PS_DEF time_t ps_file_get_mod_time(const char *path){
     return (time_t)unix_time;
 #else
     PS_TODO("Unimplemented");
+    return 0;
 #endif
 }
 

@@ -130,8 +130,9 @@ ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn
 }
 
 ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *list_items, ps_size_t item_size, ps_size_t list_size){
-    void *ctx_cp = _ps_realloc(NULL,item_size * list_size);
+    void *ctx_cp = _ps_realloc(NULL,(item_size + 1) * list_size);
     _ps_memcpy(ctx_cp,list_items,item_size * list_size);
+    _ps_memset((char*)ctx_cp + item_size * list_size,0,item_size);
     ps_graph_node_t node = {0};
     node.closure.fn = fn;
     node.closure.ctx = ctx_cp;
@@ -194,12 +195,13 @@ PS_DEF int ps_build_run(ps_graph_t graph) {
         // 2. All children finished! Pop this frame and execute the node.
         else {
             ps_idx_t completed_idx = frame->node_idx;
-            _ps_list_pop(stack); // Remove frame from stack
+            _ps_unused(_ps_list_pop(stack)); // Remove frame from stack
             _ps_list_set(states, completed_idx, 2);
             
             if (node->closure.fn != NULL){
                 int res = node->closure.fn(node->closure.ctx);
                 if (res != 0) {
+                    ps_log(PS_LOG_ERROR, "Build failed for node %llu with result %d\n", completed_idx, res);
                     _ps_after_goto(
                         result = res;,
                         defer_l
