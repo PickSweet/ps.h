@@ -296,7 +296,7 @@ PS_DEF ps_list_slice_t __i_ps_list_split(void **list, ps_half_t item_size, void*
 
 PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value, ps_ihalf_t direction){
     ps_ihalf_t i = direction > 0 ? 0 : _ps_list_size(list) - 1;
-    while (i >= 0 && i < _ps_list_size(list)) {
+    while (i >= 0 && i < (ps_ihalf_t)_ps_list_size(list)) {
         if (ps_mem_eql(_ps_list_items(list) + i * item_size, value, item_size)) {
             return i;
         }
