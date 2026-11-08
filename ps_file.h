@@ -78,6 +78,7 @@ PS_DEF int ps_file_exists(const char *path);
 PS_DEF int ps_file_delete(const char *path);
 PS_DEF int ps_file_rename(const char *src_path, const char *dest_path);
 PS_DEF time_t ps_file_get_mod_time(const char *path);
+PS_DEF int ps_file_copy(const char *src_path, const char *dest_path);
 
 #define _ps_path_parts(path_p) (_ps_list_split(&(path_p)->items, (char[]){PS_PATH_SEP}))
 #define _ps_path_basename(path_p) (_ps_list_items(&(path_p)->items) + _ps_list_find_last(&(path_p)->items, (char[]){PS_PATH_SEP}) + 1)
@@ -299,6 +300,19 @@ PS_DEF time_t ps_file_get_mod_time(const char *path){
     }
     unsigned long long unix_time = (ull.QuadPart - PS_WINDOWS_EPOCH_DIFF) / 10000000ULL;
     return (time_t)unix_time;
+#else
+    PS_TODO("Unimplemented");
+    return 0;
+#endif
+}
+
+PS_DEF int ps_file_copy(const char *src_path, const char *dest_path){
+#ifdef _WIN32
+    if (CopyFileA(src_path, dest_path, FALSE)){
+        return 1;
+    }
+    ps_log(PS_LOG_ERROR, "Unable to copy file %s to %s (%lu)\n", src_path, dest_path, GetLastError());
+    return 0;
 #else
     PS_TODO("Unimplemented");
     return 0;
