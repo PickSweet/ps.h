@@ -99,7 +99,7 @@ void ps_build_free(ps_graph_t graph);
     _ps_build_append_child_cmd(builder,parent_idx,NULL)
 
 
-// Add a node to the graph that will free its context (which happens to be this pointer) after running
+/* Add a node to the graph that will free its context (which happens to be this pointer) after running */
 #define _ps_build_free_after_run(builder, ptr)\
     _ps_blk(\
         if (ptr == NULL) {\
@@ -117,7 +117,7 @@ void ps_build_free(ps_graph_t graph);
     )
 typedef struct ps_build_frame_t{
     ps_idx_t node_idx;
-    ps_size_t child_idx; // Tracks which child we are currently visiting
+    ps_size_t child_idx; /* Tracks which child we are currently visiting */
 } ps_build_frame_t;
 
 PS_DEF int ps_build_run(ps_graph_t graph);
@@ -212,29 +212,29 @@ void ps_build_free(ps_graph_t graph){
 }
 
 PS_DEF int ps_build_run(ps_graph_t graph) {
-    // Create a local dynamic array to act as our explicit stack
+    /* Create a local dynamic array to act as our explicit stack */
     ps_build_frame_t **stack = (ps_build_frame_t**)(&(ps_list_t){0});
     char **states = (char**)(&(ps_list_t){0});
     _ps_list_resize(states, _ps_list_size(graph));
     _ps_memset(_ps_list_items(states),0,_ps_list_size(graph));
 
-    // Push the root node (index 0) to start
+    /* Push the root node (index 0) to start */
     _ps_list_set(states, 0, 1);
     _ps_list_append(stack, ((ps_build_frame_t){ .node_idx = 0, .child_idx = 0 }));
 
     int result = 0;
     while (!_ps_list_is_empty(stack)) {
-        // Look at the top frame without popping it yet
+        /* Look at the top frame without popping it yet */
         ps_build_frame_t *frame = &_ps_list_last(stack);
         ps_graph_node_t *node = &_ps_list_get(graph,frame->node_idx);
 
         ps_size_t num_children = _ps_list_size(&node->children.items);
 
-        // 1. If there are unvisited children, push the next child onto the stack
+        /* 1. If there are unvisited children, push the next child onto the stack */
         if (frame->child_idx < num_children) {
             ps_idx_t next_child_idx = _ps_list_get((ps_idx_t**)(&node->children.items), frame->child_idx);
             
-            // Advance parent's child index for the next iteration
+            /* Advance parent's child index for the next iteration */
             frame->child_idx++;
             if(_ps_list_get(states, next_child_idx) == 1){
                 _ps_after_goto(
@@ -247,10 +247,10 @@ PS_DEF int ps_build_run(ps_graph_t graph) {
                 _ps_list_append_one(stack, ((ps_build_frame_t){ .node_idx = next_child_idx, .child_idx = 0 }));
             }
         } 
-        // 2. All children finished! Pop this frame and execute the node.
+        /* 2. All children finished! Pop this frame and execute the node. */
         else {
             ps_idx_t completed_idx = frame->node_idx;
-            _ps_unused(_ps_list_pop(stack)); // Remove frame from stack
+            _ps_unused(_ps_list_pop(stack)); /* Remove frame from stack */
             _ps_list_set(states, completed_idx, 2);
             
             if (node->closure.fn != NULL){
@@ -365,6 +365,6 @@ int main(int argc, char** argv) {
         return result;
 }
 
-#endif // PSBUILD_NO_BOILER
-#endif // PSBUILD_IMP
-#endif // PSBUILD_H
+#endif /* PSBUILD_NO_BOILER */
+#endif /* PSBUILD_IMP */
+#endif /* PSBUILD_H */

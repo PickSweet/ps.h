@@ -29,22 +29,22 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _ps_stringify
 #define _ps_stringify0(x) #x
 #define _ps_stringify(x) _ps_stringify0(x)
-#endif // _ps_stringify
+#endif /* _ps_stringify */
 
 #ifndef _ps_concat
 #define _ps_concat0(a, b) a##b
 #define _ps_concat(a, b) _ps_concat0(a, b)
-#endif // _ps_concat
+#endif /* _ps_concat */
 
 #ifndef PS_DEF
 #define PS_DEF
-#endif // PS_DEF
+#endif /* PS_DEF */
 
 #ifdef __cplusplus
 #define _ps_decl_type_cast(T) (decltype(T))
 #else
 #define _ps_decl_type_cast(T)
-#endif // _ps_decl_type_cast
+#endif /* _ps_decl_type_cast */
 
 #if defined(__cplusplus) || defined(__clang__)
 #define _ps_typeof(...) typeof(__VA_ARGS__)
@@ -56,45 +56,45 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 #else
 #define _ps_typeof(...) __typeof__(__VA_ARGS__)
-#endif // _ps_typeof
+#endif /* _ps_typeof */
 
 #ifdef __cplusplus
 #define PS_INLINE inline
 #else
 #define PS_INLINE __inline
-#endif // PS_INLINE
+#endif /* PS_INLINE */
 
 #ifndef _ps_realloc
 #include <stdlib.h>
 #define _ps_realloc realloc
-#endif // _ps_realloc
+#endif /* _ps_realloc */
 
 #ifndef _ps_free
 #include <stdlib.h>
 #define _ps_free free
-#endif // _ps_free
+#endif /* _ps_free */
 
 #ifndef _ps_memcpy
 #include <string.h>
 #define _ps_memcpy memcpy
-#endif // _ps_memcpy
+#endif /* _ps_memcpy */
 
 #ifndef _ps_memset
 #include <string.h>
 #define _ps_memset memset
-#endif // _ps_memset
+#endif /* _ps_memset */
 
 #ifndef _ps_do_assert
 #include <assert.h>
 #define _ps_do_assert assert
-#endif // _ps_do_assert
+#endif /* _ps_do_assert */
 
 #define _ps_blk(...)\
     do {__VA_ARGS__} while (0)
 
 #ifndef _ps_unused
 #define _ps_unused(x) (void)(x)
-#endif // _ps_unused
+#endif /* _ps_unused */
 
 #define _ps_todo(msg) \
     _ps_blk( \
@@ -118,38 +118,38 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         void *ctx;\
     }
 
-//  borrowing from nob.h here
+/*  borrowing from nob.h here */
 #if defined(__GNUC__) || defined(__clang__)
-//   https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html
+/*   https://gcc.gnu.org/onlinedocs/gcc-4.7.2/gcc/Function-Attributes.html */
 #    ifdef __MINGW_PRINTF_FORMAT
 #        define _ps_printf_format(string_index, first_to_check) __attribute__ ((format (__MINGW_PRINTF_FORMAT, string_index, first_to_check)))
 #    else
 #        define _ps_printf_format(string_index, first_to_check) __attribute__ ((format (printf, string_index, first_to_check)))
-#    endif // __MINGW_PRINTF_FORMAT
+#    endif /* __MINGW_PRINTF_FORMAT */
 #else
-//   TODO: implement NOB_PRINTF_FORMAT for MSVC
+/*   TODO: implement NOB_PRINTF_FORMAT for MSVC */
 #    define _ps_printf_format(string_index, first_to_check)
-#endif // _ps_printf_format
+#endif /* _ps_printf_format */
 
 #ifdef PS_STRIP_PREFIX
 #ifdef FULL_SIZE_T
 #define PS_FULL_SIZE_T FULL_SIZE_T
-#endif // FULL_SIZE_T
-#endif // PS_STRIP_PREFIX
+#endif /* FULL_SIZE_T */
+#endif /* PS_STRIP_PREFIX */
 
 #ifdef PS_STRIP_PREFIX
 #ifdef HALF_SIZE_T
 #define PS_HALF_SIZE_T HALF_SIZE_T
-#endif // HALF_SIZE_T
-#endif // PS_STRIP_PREFIX
+#endif /* HALF_SIZE_T */
+#endif /* PS_STRIP_PREFIX */
 
 #ifndef PS_FULL_SIZE_T
 #define PS_FULL_SIZE_T long long
-#endif // PS_FULL_SIZE_T
+#endif /* PS_FULL_SIZE_T */
 
 #ifndef PS_HALF_SIZE_T
 #define PS_HALF_SIZE_T int
-#endif // PS_HALF_SIZE_T
+#endif /* PS_HALF_SIZE_T */
 
 typedef PS_FULL_SIZE_T ps_isize_t;
 typedef unsigned PS_FULL_SIZE_T ps_size_t;
@@ -161,7 +161,7 @@ typedef ps_isize_t isize_t;
 typedef ps_size_t size_t;
 typedef ps_ihalf_t ihalf_t;
 typedef ps_half_t half_t;
-#endif // PS_STRIP_PREFIX
+#endif /* PS_STRIP_PREFIX */
 
 
 PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size);
@@ -170,8 +170,8 @@ PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size);
 #define mem_eql ps_mem_eql
 #ifdef CORE_IMP
 #define PS_CORE_IMP
-#endif // CORE_IMP
-#endif // PS_STRIP_PREFIX
+#endif /* CORE_IMP */
+#endif /* PS_STRIP_PREFIX */
 
 #ifdef PS_CORE_IMP
 
@@ -188,7 +188,7 @@ PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
     return !cmp;
 }
 
-#endif // PS_CORE_IMP
+#endif /* PS_CORE_IMP */
 
 #ifdef PS_STRIP_PREFIX
 #define _stringify _ps_stringify
@@ -209,6 +209,6 @@ PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
 #define _after_goto _ps_after_goto
 #define _closure_t _ps_closure_t
 #define _printf_format _ps_printf_format
-#endif // PS_STRIP_PREFIX
+#endif /* PS_STRIP_PREFIX */
 
-#endif // _H_PS_CORE_H_
+#endif /* _H_PS_CORE_H_ */

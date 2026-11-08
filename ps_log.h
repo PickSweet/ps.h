@@ -27,11 +27,11 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifdef PS_STRIP_PREFIX
 #define PS_LOG_IMP
-#endif // PS_STRIP_PREFIX
+#endif /* PS_STRIP_PREFIX */
 
 #ifdef PS_LOG_IMP
 #define PS_CORE_IMP
-#endif // PS_LOG_IMP
+#endif /* PS_LOG_IMP */
 
 #include "ps_core.h"
 
@@ -51,13 +51,13 @@ typedef void (ps_log_handler)(ps_log_level_e level, const char* fmt, va_list arg
 
 #ifdef PS_STRIP_PREFIX
 #define log_handler ps_log_handler
-#endif // PS_STRIP_PREFIX
+#endif /* PS_STRIP_PREFIX */
 
-PS_DEF ps_log_level_e ps_log_levels_enabled = PS_LOG_ALL; // set flags to 0 to disable certain log levels
+PS_DEF ps_log_level_e ps_log_levels_enabled = PS_LOG_ALL; /* set flags to 0 to disable certain log levels */
 
 #ifdef PS_STRIP_PREFIX
 #define log_levels_enabled ps_log_levels_enabled
-#endif // PS_STRIP_PREFIX
+#endif /* PS_STRIP_PREFIX */
 
 PS_DEF void ps_log_level_disable(ps_log_level_e levels);
 PS_DEF void ps_log_level_enable(ps_log_level_e levels);
@@ -98,7 +98,7 @@ PS_DEF const char *__i_ps_get_log_prefix(ps_log_level_e level);
 #define _get_log_level_index __i_ps_get_log_level_index
 #define set_log_prefix ps_set_log_prefix
 #define _get_log_prefix __i_ps_get_log_prefix
-#endif // PS_STRIP_PREFIX
+#endif /* PS_STRIP_PREFIX */
 
 
 #ifdef PS_LOG_IMP
@@ -168,6 +168,6 @@ PS_DEF void ps_default_log_handler(ps_log_level_e level, const char* fmt, va_lis
 }
 
 
-#endif // PS_LOG_IMP
+#endif /* PS_LOG_IMP */
 
-#endif // _H_PS_LOG_H_
+#endif /* _H_PS_LOG_H_ */

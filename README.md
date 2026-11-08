@@ -5,8 +5,8 @@ This was originally inteded to be an STB style header library, but I just couldn
 None of this code is set in stone and is subject to large changes as I build out other systems.
 
 #### check out these other repos
-* https://github.com/tsoding/nob.h/tree/main
-* https://github.com/nothings/stb
+* https:/*github.com/tsoding/nob.h/tree/main */
+* https:/*github.com/nothings/stb */
 
 
 

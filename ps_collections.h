@@ -34,7 +34,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifdef PS_COLLECTIONS_IMP
 #define PS_CORE_IMP
 #define PS_LOG_IMP
-#endif // PS_COLLECTIONS_IMP
+#endif /* PS_COLLECTIONS_IMP */
 
 #include "ps_core.h"
 #include "ps_log.h"
@@ -338,7 +338,7 @@ PS_DEF ps_list_slice_t __i_ps_list_split(void **list, ps_half_t item_size, void*
     char *list_bytes = (char *)_ps_list_items(list);
     while (i < list_size * item_size) {
         if (ps_mem_eql(list_bytes + i, delimiter, item_size)) {
-            // Handle split logic here
+            /* Handle split logic here */
             _ps_list_append_one(r_ptr, current);
             current = (ps_slice_t){0};
             i += item_size;
@@ -365,5 +365,5 @@ PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value
     return -1;
 }
 
-#endif // PS_COLLECTIONS_IMP
-#endif // _H_PS_COLLECTIONS_H_
+#endif /* PS_COLLECTIONS_IMP */
+#endif /* _H_PS_COLLECTIONS_H_ */

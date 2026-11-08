@@ -35,7 +35,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PS_CORE_IMP
 #define PS_COLLECTIONS_IMP
 #define PS_LOG_IMP
-#endif // PS_FILE_IMP
+#endif /* PS_FILE_IMP */
 
 #include "ps_core.h"
 #include "ps_collections.h"
@@ -230,7 +230,7 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
         _ps_list_append_many(search_blob, current_dir, current_dir_len + 2);
         _ps_list_set(search_blob, current_dir_len, '*');
         _ps_list_set(search_blob, current_dir_len + 1, '\0');
-        // Process the current directory here
+        /* Process the current directory here */
         PS_FILE_HANDLE iter = FindFirstFile(*search_blob, &find_data);
         if (iter == INVALID_HANDLE_VALUE){
             ps_log_print(PS_LOG_ERROR, "Failed to open directory %s. (%lu)\n", *search_blob, GetLastError());
@@ -348,6 +348,6 @@ PS_DEF int ps_file_copy(const char *src_path, const char *dest_path){
 #endif
 }
 
-#endif // PS_FILE_IMP
+#endif /* PS_FILE_IMP */
 
-#endif // _H_PS_FILE_H_
+#endif /* _H_PS_FILE_H_ */
