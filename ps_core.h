@@ -26,11 +26,15 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_CORE_H_
 #define _H_PS_CORE_H_
 
+#ifndef _ps_stringify
 #define _ps_stringify0(x) #x
 #define _ps_stringify(x) _ps_stringify0(x)
+#endif // _ps_stringify
 
+#ifndef _ps_concat
 #define _ps_concat0(a, b) a##b
 #define _ps_concat(a, b) _ps_concat0(a, b)
+#endif // _ps_concat
 
 #ifndef PS_DEF
 #define PS_DEF
@@ -80,10 +84,10 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define _ps_memset memset
 #endif // _ps_memset
 
-#ifndef _ps_assert
+#ifndef _ps_do_assert
 #include <assert.h>
-#define _ps_assert assert
-#endif // _ps_assert
+#define _ps_do_assert assert
+#endif // _ps_do_assert
 
 #define _ps_blk(...)\
     do {__VA_ARGS__} while (0)
@@ -94,12 +98,12 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define _ps_todo(msg) \
     _ps_blk( \
-        _ps_assert(!msg && "TODO: " msg); \
+        _ps_do_assert(!msg && "TODO: " msg); \
     )
 
 #define _ps_unreachable() \
     _ps_blk( \
-        _ps_assert(!"Unreachable code reached"); \
+        _ps_do_assert(!"Unreachable code reached"); \
     )
 
 #define _ps_after_goto(stmnt, label)\
@@ -127,6 +131,18 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #    define _ps_printf_format(string_index, first_to_check)
 #endif // _ps_printf_format
 
+#ifdef PS_STRIP_PREFIX
+#ifdef FULL_SIZE_T
+#define PS_FULL_SIZE_T FULL_SIZE_T
+#endif // FULL_SIZE_T
+#endif // PS_STRIP_PREFIX
+
+#ifdef PS_STRIP_PREFIX
+#ifdef HALF_SIZE_T
+#define PS_HALF_SIZE_T HALF_SIZE_T
+#endif // HALF_SIZE_T
+#endif // PS_STRIP_PREFIX
+
 #ifndef PS_FULL_SIZE_T
 #define PS_FULL_SIZE_T long long
 #endif // PS_FULL_SIZE_T
@@ -140,8 +156,22 @@ typedef unsigned PS_FULL_SIZE_T ps_size_t;
 typedef PS_HALF_SIZE_T ps_ihalf_t;
 typedef unsigned PS_HALF_SIZE_T ps_half_t;
 
+#ifdef PS_STRIP_PREFIX
+typedef ps_isize_t isize_t;
+typedef ps_size_t size_t;
+typedef ps_ihalf_t ihalf_t;
+typedef ps_half_t half_t;
+#endif // PS_STRIP_PREFIX
+
 
 PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size);
+
+#ifdef PS_STRIP_PREFIX
+#define mem_eql ps_mem_eql
+#ifdef CORE_IMP
+#define PS_CORE_IMP
+#endif // CORE_IMP
+#endif // PS_STRIP_PREFIX
 
 #ifdef PS_CORE_IMP
 
@@ -159,5 +189,26 @@ PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
 }
 
 #endif // PS_CORE_IMP
+
+#ifdef PS_STRIP_PREFIX
+#define _stringify _ps_stringify
+#define _concat _ps_concat
+#define DEF PS_DEF
+#define _decl_type_cast _ps_decl_type_cast
+#define _typeof _ps_typeof
+#define INLINE PS_INLINE
+#define _realloc _ps_realloc
+#define _free _ps_free 
+#define _memcpy _ps_memcpy
+#define _memset _ps_memset
+#define _do_assert _ps_do_assert
+#define _blk _ps_blk
+#define _unused _ps_unused
+#define _todo _ps_todo
+#define _unreachable _ps_unreachable
+#define _after_goto _ps_after_goto
+#define _closure_t _ps_closure_t
+#define _printf_format _ps_printf_format
+#endif // PS_STRIP_PREFIX
 
 #endif // _H_PS_CORE_H_

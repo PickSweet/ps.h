@@ -25,6 +25,12 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_FILE_H_
 #define _H_PS_FILE_H_
 
+#ifdef PS_STRIP_PREFIX
+#ifdef FILE_IMP
+#define PS_FILE_IMP
+#endif /* FILE_IMP */
+#endif /* PS_STRIP_PREFIX */
+
 #ifdef PS_FILE_IMP
 #define PS_CORE_IMP
 #define PS_COLLECTIONS_IMP
@@ -40,7 +46,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifdef _WIN32
 #include <windows.h>
-#define PS_HANDLE HANDLE
+#define PS_FILE_HANDLE HANDLE
 #define PS_WINDOWS_EPOCH_DIFF 116444736000000000ULL
 #endif
 
@@ -82,6 +88,29 @@ PS_DEF int ps_file_copy(const char *src_path, const char *dest_path);
 
 #define _ps_path_parts(path_p) (_ps_list_split(&(path_p)->items, (char[]){PS_PATH_SEP}))
 #define _ps_path_basename(path_p) (_ps_list_items(&(path_p)->items) + _ps_list_find_last(&(path_p)->items, (char[]){PS_PATH_SEP}) + 1)
+
+#ifdef PS_STRIP_PREFIX
+#define FILE_HANDLE PS_FILE_HANDLE
+#define PATH_SEP PS_PATH_SEP
+#define ALT_PATH_SEP PS_ALT_PATH_SEP
+#define WINDOWS_EPOCH_DIFF PS_WINDOWS_EPOCH_DIFF
+#define path_t ps_path_t
+#define path_list_t ps_path_list_t
+#define glob_match ps_glob_match
+#define path_normalize_sep ps_path_normalize_sep
+#define dir_exists ps_dir_exists
+#define dir_ensure ps_dir_ensure
+#define dir_create ps_dir_create
+#define dir_delete ps_dir_delete
+#define dir_find_files ps_dir_find_files
+#define file_exists ps_file_exists
+#define file_delete ps_file_delete
+#define file_rename ps_file_rename
+#define file_get_mod_time ps_file_get_mod_time
+#define file_copy ps_file_copy
+#define _path_parts _ps_path_parts
+#define _path_basename _ps_path_basename
+#endif /* PS_STRIP_PREFIX */
 
 #ifdef PS_FILE_IMP
 
@@ -137,10 +166,10 @@ PS_DEF int ps_dir_exists(const char *path){
 PS_DEF int ps_dir_create(const char *path){
 #ifdef _WIN32
     if (CreateDirectoryA(path,NULL)){
-        ps_log(PS_LOG_INFO, "Created directory %s\n", path);
+        ps_log_print(PS_LOG_INFO, "Created directory %s\n", path);
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to create directory %s, %lu\n", path, GetLastError());
+    ps_log_print(PS_LOG_ERROR, "Unable to create directory %s, %lu\n", path, GetLastError());
     return 0;
 #else
     PS_TODO("Unimplemented");
@@ -150,15 +179,15 @@ PS_DEF int ps_dir_create(const char *path){
 PS_DEF int ps_dir_ensure(const char *path){
 #ifdef _WIN32
     if (CreateDirectoryA(path,NULL)){
-        ps_log(PS_LOG_INFO, "Created directory: %s\n",path);
+        ps_log_print(PS_LOG_INFO, "Created directory: %s\n",path);
         return 1;
     }
     DWORD error = GetLastError();
     if (error == ERROR_ALREADY_EXISTS){
-        ps_log(PS_LOG_INFO, "Directory %s already exits\n", path);
+        ps_log_print(PS_LOG_INFO, "Directory %s already exits\n", path);
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to create directory %s, %lu\n", path, error);
+    ps_log_print(PS_LOG_ERROR, "Unable to create directory %s, %lu\n", path, error);
     return 0;
 #else
     PS_TODO("Unimplemented");
@@ -171,7 +200,7 @@ PS_DEF int ps_dir_delete(const char *path){
     if (RemoveDirectoryA(path)){
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to delete directory %s\n", path);
+    ps_log_print(PS_LOG_ERROR, "Unable to delete directory %s\n", path);
     return 0;
 #else
     PS_TODO("Unimplemented");
@@ -202,9 +231,9 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
         _ps_list_set(search_blob, current_dir_len, '*');
         _ps_list_set(search_blob, current_dir_len + 1, '\0');
         // Process the current directory here
-        PS_HANDLE iter = FindFirstFile(*search_blob, &find_data);
+        PS_FILE_HANDLE iter = FindFirstFile(*search_blob, &find_data);
         if (iter == INVALID_HANDLE_VALUE){
-            ps_log(PS_LOG_ERROR, "Failed to open directory %s. (%lu)\n", *search_blob, GetLastError());
+            ps_log_print(PS_LOG_ERROR, "Failed to open directory %s. (%lu)\n", *search_blob, GetLastError());
             _ps_after_goto(
                 _ps_free((void *)current_dir);
                 _ps_list_foreach(dir_stack, item){
@@ -261,7 +290,7 @@ PS_DEF int ps_file_delete(const char *path){
     if (DeleteFileA(path)){
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to delete file %s\n", path);
+    ps_log_print(PS_LOG_ERROR, "Unable to delete file %s\n", path);
     return 0;
 #else
     PS_TODO("Unimplemented");
@@ -274,7 +303,7 @@ PS_DEF int ps_file_rename(const char *src_path, const char *dest_path){
     if (MoveFileA(src_path, dest_path)){
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to rename file %s to %s (%lu)\n", src_path, dest_path, GetLastError());
+    ps_log_print(PS_LOG_ERROR, "Unable to rename file %s to %s (%lu)\n", src_path, dest_path, GetLastError());
     return 0;
 #else
     PS_TODO("Unimplemented");
@@ -286,7 +315,7 @@ PS_DEF time_t ps_file_get_mod_time(const char *path){
 #ifdef _WIN32
     WIN32_FILE_ATTRIBUTE_DATA file_info;
     if (!GetFileAttributesExA(path, GetFileExInfoStandard, &file_info)){
-        ps_log(PS_LOG_ERROR, "Unable to get file mod time for %s, (%lu)\n", path, GetLastError());
+        ps_log_print(PS_LOG_ERROR, "Unable to get file mod time for %s, (%lu)\n", path, GetLastError());
         return 0;
     }
 
@@ -295,7 +324,7 @@ PS_DEF time_t ps_file_get_mod_time(const char *path){
     ull.HighPart = file_info.ftLastWriteTime.dwHighDateTime;
 
     if (ull.QuadPart < PS_WINDOWS_EPOCH_DIFF){
-        ps_log(PS_LOG_ERROR, "ERROR!!! %llu \n", ull.QuadPart);
+        ps_log_print(PS_LOG_ERROR, "ERROR!!! %llu \n", ull.QuadPart);
         return 0;
     }
     unsigned long long unix_time = (ull.QuadPart - PS_WINDOWS_EPOCH_DIFF) / 10000000ULL;
@@ -311,7 +340,7 @@ PS_DEF int ps_file_copy(const char *src_path, const char *dest_path){
     if (CopyFileA(src_path, dest_path, FALSE)){
         return 1;
     }
-    ps_log(PS_LOG_ERROR, "Unable to copy file %s to %s (%lu)\n", src_path, dest_path, GetLastError());
+    ps_log_print(PS_LOG_ERROR, "Unable to copy file %s to %s (%lu)\n", src_path, dest_path, GetLastError());
     return 0;
 #else
     PS_TODO("Unimplemented");

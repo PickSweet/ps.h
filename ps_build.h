@@ -25,6 +25,13 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_BUILD_H_
 #define _H_PS_BUILD_H_
 
+#ifdef PS_STRIP_PREFIX
+#ifdef BUILD_IMP
+#define PS_BUILD_IMP
+#endif /* BUILD_IMP */
+#endif /* PS_STRIP_PREFIX */
+
+
 #ifdef PS_BUILD_IMP
 #define PS_CORE_IMP
 #define PS_COLLECTIONS_IMP
@@ -42,7 +49,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PS_BUILD_CC _ps_stringify(CC)
 #endif
 
-typedef int (*psb_fn_t)(void*);
+typedef int (*ps_build_fn_t)(void*);
 typedef ps_size_t ps_idx_t;
 typedef struct ps_graph_node_t {
     _ps_closure_t(int, void) closure;
@@ -59,25 +66,25 @@ typedef struct ps_builder_t {
     ps_graph_t graph;
 } ps_builder_t;
 
-ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx, ps_size_t ctx_size);
-ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *list_items, ps_size_t item_size, ps_size_t list_size);
+ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, ps_build_fn_t fn, void *ctx, ps_size_t ctx_size);
+ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, ps_build_fn_t fn, void *list_items, ps_size_t item_size, ps_size_t list_size);
 
-void psb_free(ps_graph_t graph);
+void ps_build_free(ps_graph_t graph);
 
 
 #define _ps_build_append_child_cmd(builder, parent_idx, p_fn)\
-    __i_ps_build_append_child_cmd((builder)->graph,parent_idx,(psb_fn_t)(p_fn),NULL,0)
+    __i_ps_build_append_child_cmd((builder)->graph,parent_idx,(ps_build_fn_t)(p_fn),NULL,0)
 
 
-#define _ps_build_graph_append_cmd(builder, p_fn)\
+#define _ps_build_append_cmd(builder, p_fn)\
     _ps_build_append_child_cmd(builder,0,p_fn)
 
 
 #define _ps_build_append_child_cmd_with_ctx(builder, parent_idx, p_fn, T, ...)\
-    __i_ps_build_append_child_cmd((builder)->graph, parent_idx, (psb_fn_t)(p_fn), (void *)&((T){__VA_ARGS__}),sizeof((T){__VA_ARGS__}))
+    __i_ps_build_append_child_cmd((builder)->graph, parent_idx, (ps_build_fn_t)(p_fn), (void *)&((T){__VA_ARGS__}),sizeof((T){__VA_ARGS__}))
 
 #define _ps_build_append_child_cmd_list(builder, parent_idx, p_fn, list)\
-    __i_ps_build_append_child_cmd_list((builder)->graph, parent_idx, (psb_fn_t)(p_fn), (void *)(*(list)), _ps_list_item_size(list), _ps_list_size(list))
+    __i_ps_build_append_child_cmd_list((builder)->graph, parent_idx, (ps_build_fn_t)(p_fn), (void *)(*(list)), _ps_list_item_size(list), _ps_list_size(list))
 
 #define _ps_build_append_cmd_with_ctx(builder,p_fn,T,...)\
     _ps_build_append_child_cmd_with_ctx(builder,0,p_fn,T,__VA_ARGS__)
@@ -96,7 +103,7 @@ void psb_free(ps_graph_t graph);
 #define _ps_build_free_after_run(builder, ptr)\
     _ps_blk(\
         if (ptr == NULL) {\
-            ps_log(PS_LOG_ERROR, "Attempted to free NULL ptr at %s:%d\n", __FILE__, __LINE__);\
+            ps_log_print(PS_LOG_ERROR, "Attempted to free NULL ptr at %s:%d\n", __FILE__, __LINE__);\
             exit(1);\
         }\
         ps_graph_node_t node = {0};\
@@ -129,11 +136,41 @@ int ps_build_shell_cmd_fn(const char **ctx);
 #define _ps_build_append_child_shell_cmd_list(builder,parent_idx,list)\
     _ps_build_append_child_cmd_list(builder,parent_idx,ps_build_shell_cmd_fn,list)
 
+#ifdef PS_STRIP_PREFIX
+#define BUILD_CC PS_BUILD_CC
+#define build_fn_t ps_build_fn_t
+#define idx_t ps_idx_t
+#define graph_node_t ps_graph_node_t
+#define graph_t ps_graph_t
+#define builder_t ps_builder_t
+#define build_free ps_build_free
+#define _build_append_child_cmd _ps_build_append_child_cmd
+#define _build_append_cmd _ps_build_append_cmd
+#define _build_append_child_cmd_with_ctx _ps_build_append_child_cmd_with_ctx
+#define _build_append_child_cmd_list _ps_build_append_child_cmd_list
+#define _build_append_cmd_with_ctx _ps_build_append_cmd_with_ctx
+#define _build_append_cmd_list _ps_build_append_cmd_list
+#define _build_append_group _ps_build_append_group
+#define _build_append_child_group _ps_build_append_child_group
+#define _build_free_after_run _ps_build_free_after_run
+#define build_frame_t ps_build_frame_t
+#define build_run ps_build_run
+#define build_shell_cmd_fn ps_build_shell_cmd_fn
+#define _build_append_shell_cmd _ps_build_append_shell_cmd
+#define _build_append_shell_cmd_list _ps_build_append_shell_cmd_list
+#define _build_append_child_shell_cmd _ps_build_append_child_shell_cmd
+#define _build_append_child_shell_cmd_list _ps_build_append_child_shell_cmd_list
+
+#endif /* PS_STRIP_PREFIX */
+
 #ifdef PS_BUILD_IMP
 #define PS_SRC_FILE() __FILE__
 #define _ps_build_rebuild_yourself(args) __i_ps_build_rebuild_yourself(args, __FILE__);
+#ifdef PS_STRIP_PREFIX
+#define _build_rebuild_yourself _ps_build_rebuild_yourself
+#endif /* PS_STRIP_PREFIX */
 
-ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *ctx,ps_size_t ctx_size){
+ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, ps_build_fn_t fn, void *ctx,ps_size_t ctx_size){
     void *ctx_cp = _ps_realloc(NULL,ctx_size);
     _ps_memcpy(ctx_cp,ctx,ctx_size);
     ps_graph_node_t node = {0};
@@ -147,7 +184,7 @@ ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, psb_fn
     return  new_idx;
 }
 
-ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, psb_fn_t fn, void *list_items, ps_size_t item_size, ps_size_t list_size){
+ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, ps_build_fn_t fn, void *list_items, ps_size_t item_size, ps_size_t list_size){
     void *ctx_cp = _ps_realloc(NULL,(item_size + 1) * list_size);
     _ps_memcpy(ctx_cp,list_items,item_size * list_size);
     _ps_memset((char*)ctx_cp + item_size * list_size,0,item_size);
@@ -163,7 +200,7 @@ ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, p
 }
 
 
-void psb_free(ps_graph_t graph){
+void ps_build_free(ps_graph_t graph){
     _ps_list_foreach(graph, node){
         _ps_list_free(&node->children.items);
         _ps_free(node->closure.ctx);
@@ -219,7 +256,7 @@ PS_DEF int ps_build_run(ps_graph_t graph) {
             if (node->closure.fn != NULL){
                 int res = node->closure.fn(node->closure.ctx);
                 if (res != 0) {
-                    ps_log(PS_LOG_ERROR, "Build failed for node %llu with result %d\n", completed_idx, res);
+                    ps_log_print(PS_LOG_ERROR, "Build failed for node %llu with result %d\n", completed_idx, res);
                     _ps_after_goto(
                         result = res;,
                         defer_l
@@ -249,7 +286,7 @@ int ps_build_shell_cmd_fn(const char **ctx) {
     _ps_list_append_one(scratch, '\0');
     char *cmd = *scratch;
     ps_path_normalize_sep(cmd);
-    ps_log(PS_LOG_INFO, "Executing: %s\n", cmd);
+    ps_log_print(PS_LOG_INFO, "Executing: %s\n", cmd);
     int ret = system(cmd);
     _ps_list_free(scratch);
     return ret;
@@ -263,18 +300,18 @@ int __i_ps_build_needs_rebuild(char  ***args, const char *src_file){
 
 void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
     if (__i_ps_build_needs_rebuild(args, src_file)){
-        ps_log(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, _ps_slice_get(args,0));
+        ps_log_print(PS_LOG_INFO, "Source file : %s updated, rebuilding %s\n", src_file, _ps_slice_get(args,0));
         char **cmd = (char**)(&(ps_list_t){0});
         char ** old_exe_path = (char**)(&(ps_list_t){0});
         ps_str_append_fmt(cmd, "%s %s -o %s", PS_BUILD_CC, src_file, _ps_slice_get(args,0));;
         ps_str_append_fmt(old_exe_path, "%s.old", _ps_slice_get(args,0));
-        ps_log(PS_LOG_INFO, "Rebuild command: %s\n", *cmd);
+        ps_log_print(PS_LOG_INFO, "Rebuild command: %s\n", *cmd);
         if (ps_file_exists(*old_exe_path)){
             ps_file_delete(*old_exe_path);
         }
         ps_file_rename(_ps_slice_get(args,0), *old_exe_path);
         int err = system(*cmd);
-        ps_log(PS_LOG_INFO, "Rebuild command exited with code %d\n", err);
+        ps_log_print(PS_LOG_INFO, "Rebuild command exited with code %d\n", err);
         if (err){
             ps_file_rename(*old_exe_path, _ps_slice_get(args,0));
             goto return_l;
@@ -288,12 +325,12 @@ void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
             _ps_list_append_one(restart_cmd, ' ');
         }
         _ps_list_append_one(restart_cmd, '\0');
-        ps_log(PS_LOG_INFO, "Restarting: %s\n", *restart_cmd);
+        ps_log_print(PS_LOG_INFO, "Restarting: %s\n", *restart_cmd);
         ZeroMemory(&si, sizeof(si));
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
         if (!CreateProcessA(NULL,*restart_cmd,NULL,NULL,0,0,NULL,NULL,&si,&pi)){
-            ps_log(PS_LOG_INFO, "Unable to restart %s (%lu)\n", _ps_slice_get(args,0), GetLastError());
+            ps_log_print(PS_LOG_INFO, "Unable to restart %s (%lu)\n", _ps_slice_get(args,0), GetLastError());
             _ps_list_free(restart_cmd);
             goto return_l;
         }else{

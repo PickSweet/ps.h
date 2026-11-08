@@ -25,6 +25,12 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_COLLECTIONS_H_
 #define _H_PS_COLLECTIONS_H_
 
+#ifdef PS_STRIP_PREFIX
+#ifdef COLLECTIONS_IMP
+#define PS_COLLECTIONS_IMP
+#endif /* COLLECTIONS_IMP */
+#endif /* PS_STRIP_PREFIX */
+
 #ifdef PS_COLLECTIONS_IMP
 #define PS_CORE_IMP
 #define PS_LOG_IMP
@@ -56,7 +62,7 @@ typedef struct ps_slice_t {
 #define _ps_slice_skip(slice_p,n)\
     _ps_blk(\
         ps_half_t _n = (n);\
-        _ps_assert((_n <= _ps_slice_size(slice_p)) && "Out of bounds!");\
+        _ps_do_assert((_n <= _ps_slice_size(slice_p)) && "Out of bounds!");\
         _ps_slice_items(slice_p) += _n;\
         _ps_slice_size(slice_p) -= _n;\
     )
@@ -64,14 +70,14 @@ typedef struct ps_slice_t {
 #define _ps_slice_shrink(slice_p,n)\
     _ps_blk(\
         ps_half_t _n = (n);\
-        _ps_assert((_n <= _ps_slice_size(slice_p)) && "Out of bounds!");\
+        _ps_do_assert((_n <= _ps_slice_size(slice_p)) && "Out of bounds!");\
         _ps_slice_size(slice_p) -= _n;\
     )
 
 
-#define _ps_slice_first(slice_p) (_ps_slice_items(slice_p)[_ps_assert(_ps_slice_size(slice_p) > 0), 0])
-#define _ps_slice_last(slice_p) (_ps_slice_items(slice_p)[_ps_assert(_ps_slice_size(slice_p) > 0), _ps_slice_size(slice_p) - 1])
-#define _ps_slice_get(slice_p, index) (_ps_slice_items(slice_p)[_ps_assert((index) < _ps_slice_size(slice_p) && "Index out of bounds!"), (index)])
+#define _ps_slice_first(slice_p) (_ps_slice_items(slice_p)[_ps_do_assert(_ps_slice_size(slice_p) > 0), 0])
+#define _ps_slice_last(slice_p) (_ps_slice_items(slice_p)[_ps_do_assert(_ps_slice_size(slice_p) > 0), _ps_slice_size(slice_p) - 1])
+#define _ps_slice_get(slice_p, index) (_ps_slice_items(slice_p)[_ps_do_assert((index) < _ps_slice_size(slice_p) && "Index out of bounds!"), (index)])
 #define _ps_slice_set(slice_p, index, value) (_ps_slice_get(slice_p,index) = (value))
 
 #define _ps_slice_sub(slice_p, start, end)\
@@ -128,7 +134,7 @@ typedef struct ps_list_slice_t {
     _ps_blk(\
         if (_ps_list_capacity(list_p) < (new_capacity)){\
             void *_new_ptr = _ps_realloc(_ps_list_items(list_p), (new_capacity) * _ps_list_item_size(list_p));\
-            _ps_assert(_new_ptr != NULL && "Failed to reallocate memory for list!");\
+            _ps_do_assert(_new_ptr != NULL && "Failed to reallocate memory for list!");\
             _ps_list_items(list_p) = (_ps_typeof(_ps_list_items(list_p)))(_new_ptr);\
             _ps_list_capacity(list_p) = (new_capacity);\
         }\
@@ -165,7 +171,7 @@ typedef struct ps_list_slice_t {
     )
 #define _ps_list_append_many(list_p, values, count)\
     _ps_blk(\
-        _ps_assert(sizeof((values)[0]) == _ps_list_item_size(list_p) && "Appending values to list of incompatible type.");\
+        _ps_do_assert(sizeof((values)[0]) == _ps_list_item_size(list_p) && "Appending values to list of incompatible type.");\
         _ps_list_reserve(list_p,_ps_list_size(list_p) + (count));\
         _ps_memcpy(_ps_list_items(list_p) + _ps_list_size(list_p), values, (count) * _ps_list_item_size(list_p));\
         _ps_list_size(list_p)+=(count);\
@@ -183,10 +189,10 @@ typedef struct ps_list_slice_t {
         _ps_list_append_array(list_p, values);\
     )
 
-#define _ps_list_pop(list_p) (_ps_list_items(list_p)[_ps_assert(_ps_list_size(list_p) > 0), --_ps_list_size(list_p)])
-#define _ps_list_first(list_p) (_ps_list_items(list_p)[_ps_assert(_ps_list_size(list_p) > 0), 0])
-#define _ps_list_last(list_p) (_ps_list_items(list_p)[_ps_assert(_ps_list_size(list_p) > 0), _ps_list_size(list_p) - 1])
-#define _ps_list_get(list_p, index) (_ps_list_items(list_p)[_ps_assert((index) < _ps_list_size(list_p) && "Index out of bounds!"), (index)])
+#define _ps_list_pop(list_p) (_ps_list_items(list_p)[_ps_do_assert(_ps_list_size(list_p) > 0), --_ps_list_size(list_p)])
+#define _ps_list_first(list_p) (_ps_list_items(list_p)[_ps_do_assert(_ps_list_size(list_p) > 0), 0])
+#define _ps_list_last(list_p) (_ps_list_items(list_p)[_ps_do_assert(_ps_list_size(list_p) > 0), _ps_list_size(list_p) - 1])
+#define _ps_list_get(list_p, index) (_ps_list_items(list_p)[_ps_do_assert((index) < _ps_list_size(list_p) && "Index out of bounds!"), (index)])
 #define _ps_list_set(list_p, index, value) (_ps_list_get(list_p,index) = (value))
 
 #define _ps_list_swap_and_pop(list_p, index, out)\
@@ -226,6 +232,60 @@ PS_DEF ps_list_t __i_ps_list_clone( void **list, ps_half_t item_size);
 PS_DEF ps_list_slice_t __i_ps_list_split(void **list, ps_half_t item_size, void* delimiter);
 PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value, ps_ihalf_t direction);
 
+
+#ifdef PS_STRIP_PREFIX
+#define _array_size _ps_array_size
+#define slice_t ps_slice_t
+#define _slice_size _ps_slice_size
+#define _slice_item_size _ps_slice_item_size
+#define _slice_items _ps_slice_items
+#define _get_slice _ps_get_slice
+#define _slice_skip _ps_slice_skip
+#define _slice_shrink _ps_slice_shrink
+#define _slice_first _ps_slice_first
+#define _slice_last _ps_slice_last
+#define _slice_get _ps_slice_get
+#define _slice_set _ps_slice_set
+#define _slice_sub _ps_slice_sub
+#define _slice_foreach _ps_slice_foreach
+#define _slice_to_unterminated _ps_slice_to_unterminated
+#define _slice_to_terminated _ps_slice_to_terminated
+
+#define list_t ps_list_t
+#define list_list_t ps_list_list_t
+#define list_slice_t ps_list_slice_t
+#define _list_capacity _ps_list_capacity
+#define _list_size _ps_list_size
+#define _list_item_size _ps_list_item_size
+#define _list_items _ps_list_items
+#define _list_free _ps_list_free
+#define _list_reserve_precise _ps_list_reserve_precise
+#define _list_reserve _ps_list_reserve
+#define _list_resize _ps_list_resize
+#define _list_append_one _ps_list_append_one
+#define _list_append_many _ps_list_append_many
+#define _list_append_array _ps_list_append_array
+#define _list_append_list _ps_list_append_list
+#define _list_append _ps_list_append
+#define _list_pop _ps_list_pop
+#define _list_first _ps_list_first
+#define _list_last _ps_list_last
+#define _list_get _ps_list_get
+#define _list_set _ps_list_set
+#define _list_swap_and_pop _ps_list_swap_and_pop
+#define _list_unordered_remove _ps_list_unordered_remove
+#define _list_clear _ps_list_clear
+#define _list_is_empty _ps_list_is_empty
+#define _list_foreach _ps_list_foreach
+#define _list_to_unterminated _ps_list_to_unterminated
+#define _list_to_terminated _ps_list_to_terminated
+#define _list_clone _ps_list_clone
+#define _list_split _ps_list_split
+#define _list_find _ps_list_find
+#define _list_find_last _ps_list_find_last
+
+#define str_append_fmt ps_str_append_fmt
+#endif /* PS_STRIP_PREFIX */
 
 #ifdef PS_COLLECTIONS_IMP
 PS_DEF void ps_str_append_fmt(char** str, const char *fmt, ...) {
