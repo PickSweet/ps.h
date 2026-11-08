@@ -2,3 +2,4 @@
 *.exe
 *.old
 .vscode/
+config.*
