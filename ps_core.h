@@ -131,6 +131,15 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #    define _ps_printf_format(string_index, first_to_check)
 #endif /* _ps_printf_format */
 
+#define _ps_result_t(R)\
+    struct{\
+        R result;\
+        unsigned char error;\
+    }
+
+#define _ps_unwrap(result)\
+    *(((_ps_typeof(result.result)*)&result)[_ps_assert(!result.error && "Attempted to unwrap an result_t error", 0])
+
 #ifdef PS_STRIP_PREFIX
 #ifdef FULL_SIZE_T
 #define PS_FULL_SIZE_T FULL_SIZE_T
