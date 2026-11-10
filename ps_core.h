@@ -218,6 +218,8 @@ PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
 #define _after_goto _ps_after_goto
 #define _closure_t _ps_closure_t
 #define _printf_format _ps_printf_format
+#define _result_t _ps_result_t
+#define _unwrap _ps_unwrap
 #endif /* PS_STRIP_PREFIX */
 
 #endif /* _H_PS_CORE_H_ */
