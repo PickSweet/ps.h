@@ -235,6 +235,25 @@ typedef struct ps_list_slice_t {
 #define _ps_list_find(list_p, value) __i_ps_list_find((void**)(list_p), _ps_list_item_size(list_p), (void*)(value), 1)
 #define _ps_list_find_last(list_p, value) __i_ps_list_find((void**)(list_p), _ps_list_item_size(list_p), (void*)(value), -1)
 
+#define _ps_str_concat_one(str_p, str) _ps_list_append_many(str_p, str, strlen(str))
+
+#define _ps_str_concat(str_p, ...)\
+    _ps_blk(\
+        char *strs[] = {__VA_ARGS__, NULL};\
+        do {\
+            _ps_str_concat_one(str_p, *strs);\
+        } while (*(++strs));\
+    )
+
+#define _ps_str_concatz(str_p, ...)\
+    _ps_blk(\
+        char *strs[] = {__VA_ARGS__, NULL};\
+        do {\
+            _ps_str_concat_one(str_p, *strs);\
+        } while (*(++strs));\
+        _ps_list_append_one(str_p, '\0');\
+    )
+
 PS_DEF void ps_str_append_fmt( char **str, const char *fmt, ...) _ps_printf_format(2, 3);
 PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, ps_half_t item_size, ps_half_t size);
 PS_DEF ps_list_t __i_ps_list_clone( void **list, ps_half_t item_size);
@@ -295,6 +314,9 @@ PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value
 #define _list_find _ps_list_find
 #define _list_find_last _ps_list_find_last
 
+#define str_concat_one _ps_str_concat_one
+#define str_concat _ps_str_concat
+#define str_concatz _ps_str_concatz
 #define str_append_fmt ps_str_append_fmt
 #endif /* PS_STRIP_PREFIX */
 
