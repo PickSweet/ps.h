@@ -240,17 +240,19 @@ typedef struct ps_list_slice_t {
 #define _ps_str_concat(str_p, ...)\
     _ps_blk(\
         char *strs[] = {__VA_ARGS__, NULL};\
+        char **strs_p = strs;\
         do {\
-            _ps_str_concat_one(str_p, *strs);\
-        } while (*(++strs));\
+            _ps_str_concat_one(str_p, *strs_p);\
+        } while (*(++strs_p));\
     )
 
 #define _ps_str_concatz(str_p, ...)\
     _ps_blk(\
         char *strs[] = {__VA_ARGS__, NULL};\
+        char **strs_p = strs;\
         do {\
-            _ps_str_concat_one(str_p, *strs);\
-        } while (*(++strs));\
+            _ps_str_concat_one(str_p, *strs_p);\
+        } while (*(++strs_p));\
         _ps_list_append_one(str_p, '\0');\
     )
 
