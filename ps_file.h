@@ -58,14 +58,9 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PS_ALT_PATH_SEP '\\'
 #endif
 
-typedef struct {
-    char *items;
-    ps_half_t capacity;
-    ps_half_t size;
-} ps_path_t;
 
 typedef struct ps_path_list_t {
-    ps_path_t *items;
+    ps_str_t *items;
     ps_half_t capacity;
     ps_half_t size;
 } ps_path_list_t;
@@ -85,6 +80,8 @@ PS_DEF int ps_file_delete(const char *path);
 PS_DEF int ps_file_rename(const char *src_path, const char *dest_path);
 PS_DEF time_t ps_file_get_mod_time(const char *path);
 PS_DEF int ps_file_copy(const char *src_path, const char *dest_path);
+PS_DEF ps_str_t ps_file_read_all(const char *path);
+PS_DEF int ps_file_write(const char *path, ps_str_t *data, int append);
 
 #define _ps_path_parts(path_p) (_ps_list_split(&(path_p)->items, (char[]){PS_PATH_SEP}))
 #define _ps_path_basename(path_p) (_ps_list_items(&(path_p)->items) + _ps_list_find_last(&(path_p)->items, (char[]){PS_PATH_SEP}) + 1)
@@ -94,7 +91,6 @@ PS_DEF int ps_file_copy(const char *src_path, const char *dest_path);
 #define PATH_SEP PS_PATH_SEP
 #define ALT_PATH_SEP PS_ALT_PATH_SEP
 #define WINDOWS_EPOCH_DIFF PS_WINDOWS_EPOCH_DIFF
-#define path_t ps_path_t
 #define path_list_t ps_path_list_t
 #define glob_match ps_glob_match
 #define path_normalize_sep ps_path_normalize_sep
@@ -108,6 +104,8 @@ PS_DEF int ps_file_copy(const char *src_path, const char *dest_path);
 #define file_rename ps_file_rename
 #define file_get_mod_time ps_file_get_mod_time
 #define file_copy ps_file_copy
+#define file_read_all ps_file_read_all
+#define file_write ps_file_write
 #define _path_parts _ps_path_parts
 #define _path_basename _ps_path_basename
 #endif /* PS_STRIP_PREFIX */
@@ -214,7 +212,7 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
     if (!dir || !blob) goto return_l;
     const ps_size_t dir_len = strlen(dir);
     if (dir_len == 0 || (dir[dir_len - 1] != PS_PATH_SEP && dir[dir_len - 1] != PS_ALT_PATH_SEP) || !ps_dir_exists(dir)) goto return_l;
-    ps_path_t **r_ptr = (ps_path_t **)&result;
+    ps_str_t **r_ptr = (ps_str_t **)&result;
     const char ***dir_stack = ((const char***)&((ps_list_t){0}));
     char **search_blob = ((char **)&((ps_list_t){0}));
     char *dir_copy = _ps_realloc(NULL, dir_len + 1);
@@ -256,7 +254,7 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
             }else{
                 if (ps_glob_match(blob, find_data.cFileName)){
                     ps_size_t str_len = strlen(find_data.cFileName);
-                    ps_path_t file_path = {0};
+                    ps_str_t file_path = {0};
                     _ps_list_append_many(&file_path.items, current_dir, current_dir_len);
                     _ps_list_append_many(&file_path.items, find_data.cFileName, str_len + 1);
                     _ps_list_append_one(r_ptr, file_path);
@@ -342,6 +340,67 @@ PS_DEF int ps_file_copy(const char *src_path, const char *dest_path){
     }
     ps_log_print(PS_LOG_ERROR, "Unable to copy file %s to %s (%lu)\n", src_path, dest_path, GetLastError());
     return 0;
+#else
+    PS_TODO("Unimplemented");
+    return 0;
+#endif
+}
+
+PS_DEF ps_str_t ps_file_read_all(const char *path){
+    ps_str_t result = {0};
+    char **result_ptr = (char **)&result;
+#ifdef _WIN32
+    HANDLE file = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE){
+        ps_log_print(PS_LOG_ERROR, "Unable to open file %s (%lu)\n", path, GetLastError());
+        return result;
+    }
+    LARGE_INTEGER size;
+    if (!GetFileSizeEx(file, &size)){
+        ps_log_print(PS_LOG_ERROR, "Unable to get file size for %s (%lu)\n", path, GetLastError());
+        CloseHandle(file);
+        return result;
+    }
+    _ps_list_reserve(result_ptr, size.QuadPart + 1);
+    if (!_ps_list_items(result_ptr)){
+        CloseHandle(file);
+        return result;
+    }
+    DWORD bytes_read;
+    if (!ReadFile(file, _ps_list_items(result_ptr), (DWORD)size.QuadPart, &bytes_read, NULL)){
+        ps_log_print(PS_LOG_ERROR, "Unable to read file %s (%lu)\n", path, GetLastError());
+        _ps_list_free(result_ptr);
+        CloseHandle(file);
+        return result;
+    }
+    _ps_list_items(result_ptr)[bytes_read] = '\0';
+    result.size = (ps_half_t)bytes_read;
+    CloseHandle(file);
+    return result;
+#else
+    PS_TODO("Unimplemented");
+    return result;
+#endif
+}
+
+PS_DEF int ps_file_write(const char *path, ps_str_t *data, int append){
+#ifdef _WIN32
+    HANDLE file = CreateFileA(path, GENERIC_WRITE, 0, NULL, append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE){
+        ps_log_print(PS_LOG_ERROR, "Unable to open file %s (%lu)\n", path, GetLastError());
+        return 0;
+    }
+    if (append){
+        SetFilePointer(file, 0, NULL, FILE_END);
+    }
+    DWORD bytes_written;
+    if (!WriteFile(file, data->items, (DWORD)data->size, &bytes_written, NULL)){
+        ps_log_print(PS_LOG_ERROR, "Unable to write file %s (%lu)\n", path, GetLastError());
+        CloseHandle(file);
+        return 0;
+    }
+    CloseHandle(file);
+    return 1;
 #else
     PS_TODO("Unimplemented");
     return 0;
