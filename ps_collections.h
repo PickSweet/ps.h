@@ -49,6 +49,11 @@ typedef struct ps_slice_t {
     ps_half_t size;
 } ps_slice_t;
 
+typedef struct ps_str_view_t {
+    char *items;
+    ps_half_t size;
+} ps_str_view_t;
+
 #define _ps_slice_size(slice_p) (((ps_half_t*)(((ps_size_t*)(slice_p)) + 1))[0])
 #define _ps_slice_item_size(slice_p) (sizeof(*(*(slice_p))))
 #define _ps_slice_items(slice_p) (*(slice_p))
@@ -102,6 +107,11 @@ typedef struct ps_list_t {
     ps_half_t size;
 } ps_list_t;
 
+typedef struct ps_str_t {
+    char *items;
+    ps_half_t capacity;
+    ps_half_t size;
+} ps_str_t;
 typedef struct ps_list_list_t {
     ps_list_t *items;
     ps_half_t capacity;
@@ -225,7 +235,6 @@ typedef struct ps_list_slice_t {
 #define _ps_list_find(list_p, value) __i_ps_list_find((void**)(list_p), _ps_list_item_size(list_p), (void*)(value), 1)
 #define _ps_list_find_last(list_p, value) __i_ps_list_find((void**)(list_p), _ps_list_item_size(list_p), (void*)(value), -1)
 
-
 PS_DEF void ps_str_append_fmt( char **str, const char *fmt, ...) _ps_printf_format(2, 3);
 PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, ps_half_t item_size, ps_half_t size);
 PS_DEF ps_list_t __i_ps_list_clone( void **list, ps_half_t item_size);
@@ -236,6 +245,7 @@ PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value
 #ifdef PS_STRIP_PREFIX
 #define _array_size _ps_array_size
 #define slice_t ps_slice_t
+#define str_view_t ps_str_view_t
 #define _slice_size _ps_slice_size
 #define _slice_item_size _ps_slice_item_size
 #define _slice_items _ps_slice_items
@@ -252,6 +262,7 @@ PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value
 #define _slice_to_terminated _ps_slice_to_terminated
 
 #define list_t ps_list_t
+#define str_t ps_str_t
 #define list_list_t ps_list_list_t
 #define list_slice_t ps_list_slice_t
 #define _list_capacity _ps_list_capacity
