@@ -314,9 +314,9 @@ PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value
 #define _list_find _ps_list_find
 #define _list_find_last _ps_list_find_last
 
-#define str_concat_one _ps_str_concat_one
-#define str_concat _ps_str_concat
-#define str_concatz _ps_str_concatz
+#define _str_concat_one _ps_str_concat_one
+#define _str_concat _ps_str_concat
+#define _str_concatz _ps_str_concatz
 #define str_append_fmt ps_str_append_fmt
 #endif /* PS_STRIP_PREFIX */
 
