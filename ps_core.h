@@ -138,7 +138,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     }
 
 #define _ps_unwrap(result)\
-    *(((_ps_typeof(result.result)*)&result)[_ps_assert(!result.error && "Attempted to unwrap an result_t error", 0])
+    *(((_ps_typeof(result.result)*)&result)[_ps_do_assert(!result.error && "Attempted to unwrap an result_t error", 0])
 
 #ifdef PS_STRIP_PREFIX
 #ifdef FULL_SIZE_T
