@@ -258,7 +258,7 @@ typedef struct ps_list_slice_t {
 
 PS_DEF void ps_str_append_fmt( char **str, const char *fmt, ...) _ps_printf_format(2, 3);
 PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, ps_half_t item_size, ps_half_t size);
-PS_DEF ps_list_t __i_ps_list_clone( void **list, ps_half_t item_size);
+PS_DEF void** __i_ps_list_clone( void **list, ps_half_t item_size);
 PS_DEF ps_list_slice_t __i_ps_list_split(void **list, ps_half_t item_size, void* delimiter);
 PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value, ps_ihalf_t direction);
 
@@ -352,14 +352,14 @@ PS_DEF void* __i_ps_to_terminated(void *ptr, void* terminal, ps_half_t item_size
     return result;
 }
 
-PS_DEF ps_list_t __i_ps_list_clone( void **list, ps_half_t item_size){
+PS_DEF void** __i_ps_list_clone( void **list, ps_half_t item_size){
     ps_list_t result = {0};
     if (list && _ps_list_size(list) > 0) {
         result.items = _ps_realloc(result.items, _ps_list_size(list) * item_size);
         _ps_memcpy(result.items, _ps_list_items(list), _ps_list_size(list) * item_size);
         _ps_list_size(&result) = _ps_list_size(list);
     }
-    return result;
+    return (void**)&result.items;
 }
 
 PS_DEF ps_list_slice_t __i_ps_list_split(void **list, ps_half_t item_size, void* delimiter) {
