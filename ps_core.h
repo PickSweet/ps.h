@@ -84,6 +84,11 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define _ps_memset memset
 #endif /* _ps_memset */
 
+#ifndef _ps_memmove
+#include <string.h>
+#define _ps_memmove memmove
+#endif /* _ps_memmove */
+
 #ifndef _ps_do_assert
 #include <assert.h>
 #define _ps_do_assert assert
@@ -210,6 +215,7 @@ PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
 #define _free _ps_free 
 #define _memcpy _ps_memcpy
 #define _memset _ps_memset
+#define _memmove _ps_memmove
 #define _do_assert _ps_do_assert
 #define _blk _ps_blk
 #define _unused _ps_unused
