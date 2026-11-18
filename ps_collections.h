@@ -25,17 +25,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_COLLECTIONS_H_
 #define _H_PS_COLLECTIONS_H_
 
-#ifdef PS_STRIP_PREFIX
-#ifdef COLLECTIONS_IMP
-#define PS_COLLECTIONS_IMP
-#endif /* COLLECTIONS_IMP */
-#endif /* PS_STRIP_PREFIX */
-
-#ifdef PS_COLLECTIONS_IMP
-#define PS_CORE_IMP
-#define PS_LOG_IMP
-#endif /* PS_COLLECTIONS_IMP */
-
 #include "ps_core.h"
 #include "ps_log.h"
 #include <stdio.h>
@@ -322,7 +311,7 @@ PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value
 #define str_append_fmt ps_str_append_fmt
 #endif /* PS_STRIP_PREFIX */
 
-#ifdef PS_COLLECTIONS_IMP
+#ifdef PS_IMP
 PS_DEF void ps_str_append_fmt(char** str, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -400,5 +389,5 @@ PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value
     return -1;
 }
 
-#endif /* PS_COLLECTIONS_IMP */
+#endif /* PS_IMP */
 #endif /* _H_PS_COLLECTIONS_H_ */
