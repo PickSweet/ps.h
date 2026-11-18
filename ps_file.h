@@ -47,11 +47,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 
-typedef struct ps_path_list_t {
-    ps_str_t *items;
-    ps_half_t capacity;
-    ps_half_t size;
-} ps_path_list_t;
+typedef _ps_list_t(ps_str_t) ps_path_list_t;
 
 PS_DEF int ps_glob_match(const char *pattern, const char *str);
 
@@ -219,8 +215,8 @@ PS_DEF ps_path_list_t ps_dir_find_files(const char *dir, const char *blob, int r
                 if (ps_glob_match(blob, find_data.cFileName)){
                     ps_size_t str_len = strlen(find_data.cFileName);
                     ps_str_t file_path = {0};
-                    _ps_list_append_many(&file_path.items, current_dir, current_dir_len);
-                    _ps_list_append_many(&file_path.items, find_data.cFileName, str_len + 1);
+                    _ps_list_append_many((char**)&file_path, current_dir, current_dir_len);
+                    _ps_list_append_many((char**)&file_path, find_data.cFileName, str_len + 1);
                     _ps_list_append_one(r_ptr, file_path);
                 }
             }

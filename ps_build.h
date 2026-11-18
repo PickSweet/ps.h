@@ -38,9 +38,10 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 typedef int (*ps_build_fn_t)(void*);
 typedef ps_size_t ps_idx_t;
+typedef _ps_list_t(ps_idx_t) ps_idx_list_t;
 typedef struct ps_graph_node_t {
     _ps_closure_t(int, void) closure;
-    ps_list_t children;
+    ps_idx_list_t children;
     ps_idx_t parent;
 } ps_graph_node_t;
 
@@ -97,10 +98,10 @@ void ps_build_free(ps_graph_t graph);
         node.closure.fn = NULL;\
         node.closure.ctx = (void *)(ptr);\
         node.parent = 0;\
-        node.children = (ps_list_t){0};\
+        node.children = (ps_idx_list_t){0};\
         ps_idx_t node_idx = _ps_list_size((builder)->graph);\
         _ps_list_append_one((builder)->graph,node);\
-        _ps_list_append_one((ps_idx_t**)(&(_ps_list_get((builder)->graph,0)).children.items),node_idx);\
+        _ps_list_append_one((ps_idx_t **)&(_ps_list_get((builder)->graph,0)).children,node_idx);\
     )
 typedef struct ps_build_frame_t{
     ps_idx_t node_idx;
@@ -127,9 +128,6 @@ int ps_build_shell_cmd_fn(const char **ctx);
 #ifdef PS_IMP
 #define PS_SRC_FILE() __FILE__
 #define _ps_build_rebuild_yourself(args) __i_ps_build_rebuild_yourself(args, __FILE__);
-#ifdef PS_STRIP_PREFIX
-#define _build_rebuild_yourself _ps_build_rebuild_yourself
-#endif /* PS_STRIP_PREFIX */
 
 ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, ps_build_fn_t fn, void *ctx,ps_size_t ctx_size){
     void *ctx_cp = _ps_realloc(NULL,ctx_size);
@@ -138,10 +136,10 @@ ps_idx_t __i_ps_build_append_child_cmd(ps_graph_t graph, ps_idx_t parent, ps_bui
     node.closure.fn = fn;
     node.closure.ctx = ctx_cp;
     node.parent = parent;
-    node.children = (ps_list_t){0};
+    node.children = (ps_idx_list_t){0};
     ps_idx_t new_idx = _ps_list_size(graph);
     _ps_list_append_one(graph,node);
-    _ps_list_append_one((ps_idx_t**)(&(_ps_list_get(graph,parent)).children.items),new_idx);
+    _ps_list_append_one((ps_idx_t **)&(_ps_list_get(graph,parent)).children,new_idx);
     return  new_idx;
 }
 
@@ -153,17 +151,17 @@ ps_idx_t __i_ps_build_append_child_cmd_list(ps_graph_t graph, ps_idx_t parent, p
     node.closure.fn = fn;
     node.closure.ctx = ctx_cp;
     node.parent = parent;
-    node.children = (ps_list_t){0};
+    node.children = (ps_idx_list_t){0};
     ps_idx_t new_idx = _ps_list_size(graph);
     _ps_list_append_one(graph,node);
-    _ps_list_append_one((ps_idx_t**)(&(_ps_list_get(graph,parent)).children.items),new_idx);
+    _ps_list_append_one((ps_idx_t **)&(_ps_list_get(graph,parent)).children,new_idx);
     return  new_idx;
 }
 
 
 void ps_build_free(ps_graph_t graph){
     _ps_list_foreach(graph, node){
-        _ps_list_free(&node->children.items);
+        _ps_list_free((ps_idx_t **)&node->children);
         _ps_free(node->closure.ctx);
         node->closure.ctx = NULL;
         node->closure.fn = NULL;
@@ -189,11 +187,11 @@ PS_DEF int ps_build_run(ps_graph_t graph) {
         ps_build_frame_t *frame = &_ps_list_last(stack);
         ps_graph_node_t *node = &_ps_list_get(graph,frame->node_idx);
 
-        ps_size_t num_children = _ps_list_size(&node->children.items);
+        ps_size_t num_children = _ps_list_size(&node->children);
 
         /* 1. If there are unvisited children, push the next child onto the stack */
         if (frame->child_idx < num_children) {
-            ps_idx_t next_child_idx = _ps_list_get((ps_idx_t**)(&node->children.items), frame->child_idx);
+            ps_idx_t next_child_idx = _ps_list_get(&node->children.items, frame->child_idx);
             
             /* Advance parent's child index for the next iteration */
             frame->child_idx++;
@@ -327,6 +325,11 @@ int main(int argc, char** argv) {
 }
 
 #endif /* PS_BUILD_NO_BOILER */
+
+#ifdef PS_STRIP_PREFIX
+#define _build_rebuild_yourself _ps_build_rebuild_yourself
+#endif /* PS_STRIP_PREFIX */
+
 #endif /* PS_IMP */
 
 #ifdef PS_STRIP_PREFIX
