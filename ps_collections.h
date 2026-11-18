@@ -33,17 +33,16 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define _ps_array_size(array) (sizeof(array) / sizeof((array)[0]))
 
-typedef struct ps_slice_t {
-    void *items;
-    ps_half_t size;
-} ps_slice_t;
+#define _ps_slice_t(T) struct {\
+    T *items;\
+    ps_half_t size;\
+}
 
-typedef struct ps_str_view_t {
-    char *items;
-    ps_half_t size;
-} ps_str_view_t;
+typedef _ps_slice_t(void) ps_slice_t;
+typedef _ps_slice_t(char) ps_str_view_t;
 
-#define _ps_slice_size(slice_p) (((ps_half_t*)(((ps_size_t*)(slice_p)) + 1))[0])
+
+#define _ps_slice_size(slice_p) (*((ps_half_t*)((char*)(slice_p) + sizeof(void*))))
 #define _ps_slice_item_size(slice_p) (sizeof(*(*(slice_p))))
 #define _ps_slice_items(slice_p) (*(slice_p))
 
@@ -90,31 +89,21 @@ typedef struct ps_str_view_t {
 
 #define _ps_slice_to_unterminated(slice_p) (_ps_slice_items(slice_p))
 #define _ps_slice_to_terminated(slice_p, terminal) (_ps_typeof(_ps_slice_items(slice_p)))__i_ps_to_terminated(_ps_slice_items(slice_p), &(terminal),_ps_slice_item_size(slice_p), _ps_slice_size(slice_p))
-typedef struct ps_list_t {
-    void *items;
-    ps_half_t capacity;
-    ps_half_t size;
-} ps_list_t;
 
-typedef struct ps_str_t {
-    char *items;
-    ps_half_t capacity;
-    ps_half_t size;
-} ps_str_t;
-typedef struct ps_list_list_t {
-    ps_list_t *items;
-    ps_half_t capacity;
-    ps_half_t size;
-} ps_list_list_t;
+#define _ps_list_t(T) struct {\
+    T *items;\
+    ps_half_t capacity;\
+    ps_half_t size;\
+}
 
-typedef struct ps_list_slice_t {
-    ps_slice_t *items;
-    ps_half_t capacity;
-    ps_half_t size;
-} ps_list_slice_t;
+typedef _ps_list_t(void) ps_list_t;
+typedef _ps_list_t(char) ps_str_t;
+typedef _ps_list_t(ps_list_t) ps_list_list_t;
+typedef _ps_list_t(ps_slice_t) ps_list_slice_t;
 
-#define _ps_list_capacity(list_p) (((ps_half_t*)(((ps_size_t*)(list_p)) + 1))[0])
-#define _ps_list_size(list_p) (((ps_half_t*)(((ps_size_t*)(list_p)) + 1))[1])
+
+#define _ps_list_capacity(list_p) (*((ps_half_t*)((char*)(list_p) + sizeof(void*))))
+#define _ps_list_size(list_p) (*((ps_half_t*)((char*)(list_p) + sizeof(void*) + sizeof(ps_half_t))))
 #define _ps_list_item_size(list_p) (sizeof(*(*(list_p))))
 #define _ps_list_items(list_p) (*(list_p))
 
@@ -252,65 +241,6 @@ PS_DEF ps_list_slice_t __i_ps_list_split(void **list, ps_half_t item_size, void*
 PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value, ps_ihalf_t direction);
 
 
-#ifdef PS_STRIP_PREFIX
-#define _array_size _ps_array_size
-#define slice_t ps_slice_t
-#define str_view_t ps_str_view_t
-#define _slice_size _ps_slice_size
-#define _slice_item_size _ps_slice_item_size
-#define _slice_items _ps_slice_items
-#define _get_slice _ps_get_slice
-#define _slice_skip _ps_slice_skip
-#define _slice_shrink _ps_slice_shrink
-#define _slice_first _ps_slice_first
-#define _slice_last _ps_slice_last
-#define _slice_get _ps_slice_get
-#define _slice_set _ps_slice_set
-#define _slice_sub _ps_slice_sub
-#define _slice_foreach _ps_slice_foreach
-#define _slice_to_unterminated _ps_slice_to_unterminated
-#define _slice_to_terminated _ps_slice_to_terminated
-
-#define list_t ps_list_t
-#define str_t ps_str_t
-#define list_list_t ps_list_list_t
-#define list_slice_t ps_list_slice_t
-#define _list_capacity _ps_list_capacity
-#define _list_size _ps_list_size
-#define _list_item_size _ps_list_item_size
-#define _list_items _ps_list_items
-#define _list_free _ps_list_free
-#define _list_reserve_precise _ps_list_reserve_precise
-#define _list_reserve _ps_list_reserve
-#define _list_resize _ps_list_resize
-#define _list_append_one _ps_list_append_one
-#define _list_append_many _ps_list_append_many
-#define _list_append_array _ps_list_append_array
-#define _list_append_list _ps_list_append_list
-#define _list_append _ps_list_append
-#define _list_pop _ps_list_pop
-#define _list_first _ps_list_first
-#define _list_last _ps_list_last
-#define _list_get _ps_list_get
-#define _list_set _ps_list_set
-#define _list_swap_and_pop _ps_list_swap_and_pop
-#define _list_unordered_remove _ps_list_unordered_remove
-#define _list_clear _ps_list_clear
-#define _list_is_empty _ps_list_is_empty
-#define _list_foreach _ps_list_foreach
-#define _list_to_unterminated _ps_list_to_unterminated
-#define _list_to_terminated _ps_list_to_terminated
-#define _list_clone _ps_list_clone
-#define _list_split _ps_list_split
-#define _list_find _ps_list_find
-#define _list_find_last _ps_list_find_last
-
-#define _str_concat_one _ps_str_concat_one
-#define _str_concat _ps_str_concat
-#define _str_concatz _ps_str_concatz
-#define str_append_fmt ps_str_append_fmt
-#endif /* PS_STRIP_PREFIX */
-
 #ifdef PS_IMP
 PS_DEF void ps_str_append_fmt(char** str, const char *fmt, ...) {
     va_list args;
@@ -390,4 +320,66 @@ PS_DEF ps_ihalf_t __i_ps_list_find(void **list, ps_half_t item_size, void* value
 }
 
 #endif /* PS_IMP */
+
+
+#ifdef PS_STRIP_PREFIX
+#define _array_size _ps_array_size
+#define slice_t ps_slice_t
+#define str_view_t ps_str_view_t
+#define _slice_size _ps_slice_size
+#define _slice_item_size _ps_slice_item_size
+#define _slice_items _ps_slice_items
+#define _get_slice _ps_get_slice
+#define _slice_skip _ps_slice_skip
+#define _slice_shrink _ps_slice_shrink
+#define _slice_first _ps_slice_first
+#define _slice_last _ps_slice_last
+#define _slice_get _ps_slice_get
+#define _slice_set _ps_slice_set
+#define _slice_sub _ps_slice_sub
+#define _slice_foreach _ps_slice_foreach
+#define _slice_to_unterminated _ps_slice_to_unterminated
+#define _slice_to_terminated _ps_slice_to_terminated
+
+#define list_t ps_list_t
+#define str_t ps_str_t
+#define list_list_t ps_list_list_t
+#define list_slice_t ps_list_slice_t
+#define _list_capacity _ps_list_capacity
+#define _list_size _ps_list_size
+#define _list_item_size _ps_list_item_size
+#define _list_items _ps_list_items
+#define _list_free _ps_list_free
+#define _list_reserve_precise _ps_list_reserve_precise
+#define _list_reserve _ps_list_reserve
+#define _list_resize _ps_list_resize
+#define _list_append_one _ps_list_append_one
+#define _list_append_many _ps_list_append_many
+#define _list_append_array _ps_list_append_array
+#define _list_append_list _ps_list_append_list
+#define _list_append _ps_list_append
+#define _list_pop _ps_list_pop
+#define _list_first _ps_list_first
+#define _list_last _ps_list_last
+#define _list_get _ps_list_get
+#define _list_set _ps_list_set
+#define _list_swap_and_pop _ps_list_swap_and_pop
+#define _list_unordered_remove _ps_list_unordered_remove
+#define _list_clear _ps_list_clear
+#define _list_is_empty _ps_list_is_empty
+#define _list_foreach _ps_list_foreach
+#define _list_to_unterminated _ps_list_to_unterminated
+#define _list_to_terminated _ps_list_to_terminated
+#define _list_clone _ps_list_clone
+#define _list_split _ps_list_split
+#define _list_find _ps_list_find
+#define _list_find_last _ps_list_find_last
+
+#define _str_concat_one _ps_str_concat_one
+#define _str_concat _ps_str_concat
+#define _str_concatz _ps_str_concatz
+#define str_append_fmt ps_str_append_fmt
+#endif /* PS_STRIP_PREFIX */
+
+
 #endif /* _H_PS_COLLECTIONS_H_ */
