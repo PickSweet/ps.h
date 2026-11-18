@@ -25,14 +25,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_LOG_H_
 #define _H_PS_LOG_H_
 
-#ifdef PS_STRIP_PREFIX
-#define PS_LOG_IMP
-#endif /* PS_STRIP_PREFIX */
-
-#ifdef PS_LOG_IMP
-#define PS_CORE_IMP
-#endif /* PS_LOG_IMP */
-
 #include "ps_core.h"
 
 #include <stdarg.h>
@@ -49,15 +41,8 @@ typedef unsigned char ps_log_level_e;
 
 typedef void (ps_log_handler)(ps_log_level_e level, const char* fmt, va_list args);
 
-#ifdef PS_STRIP_PREFIX
-#define log_handler ps_log_handler
-#endif /* PS_STRIP_PREFIX */
-
 PS_DEF ps_log_level_e ps_log_levels_enabled = PS_LOG_ALL; /* set flags to 0 to disable certain log levels */
 
-#ifdef PS_STRIP_PREFIX
-#define log_levels_enabled ps_log_levels_enabled
-#endif /* PS_STRIP_PREFIX */
 
 PS_DEF void ps_log_level_disable(ps_log_level_e levels);
 PS_DEF void ps_log_level_enable(ps_log_level_e levels);
@@ -76,32 +61,7 @@ PS_DEF unsigned char __i_ps_get_log_level_index(ps_log_level_e level);
 PS_DEF void ps_set_log_prefix(ps_log_level_e level, const char *prefix);
 PS_DEF const char *__i_ps_get_log_prefix(ps_log_level_e level);
 
-#ifdef PS_STRIP_PREFIX
-#define LOG_NONE PS_LOG_NONE
-#define LOG_INFO PS_LOG_INFO
-#define LOG_WARNING PS_LOG_WARNING
-#define LOG_ERROR PS_LOG_ERROR
-#define LOG_ALL PS_LOG_ALL
-
-#define log_level_e ps_log_level_e
-#define log_handler ps_log_handler
-#define log_levels_enabled ps_log_levels_enabled
-
-#define log_level_disable ps_log_level_disable
-#define log_level_enable ps_log_level_enable
-#define log_level_toggle ps_log_level_toggle
-#define set_log_handler ps_set_log_handler
-#define get_log_handler ps_get_log_handler
-#define default_log_handler ps_default_log_handler
-#define log_print ps_log_print
-#define _log_level_prefixes __i_ps_log_level_prefixes
-#define _get_log_level_index __i_ps_get_log_level_index
-#define set_log_prefix ps_set_log_prefix
-#define _get_log_prefix __i_ps_get_log_prefix
-#endif /* PS_STRIP_PREFIX */
-
-
-#ifdef PS_LOG_IMP
+#ifdef PS_IMP
 
 PS_DEF void ps_log_level_disable(ps_log_level_e levels){
     ps_log_levels_enabled &= (~levels);
@@ -168,6 +128,33 @@ PS_DEF void ps_default_log_handler(ps_log_level_e level, const char* fmt, va_lis
 }
 
 
-#endif /* PS_LOG_IMP */
+#endif /* PS_IMP */
+
+#ifdef PS_STRIP_PREFIX
+#define LOG_NONE PS_LOG_NONE
+#define LOG_INFO PS_LOG_INFO
+#define LOG_WARNING PS_LOG_WARNING
+#define LOG_ERROR PS_LOG_ERROR
+#define LOG_ALL PS_LOG_ALL
+
+#define log_level_e ps_log_level_e
+#define log_handler ps_log_handler
+#define log_levels_enabled ps_log_levels_enabled
+
+#define log_level_disable ps_log_level_disable
+#define log_level_enable ps_log_level_enable
+#define log_level_toggle ps_log_level_toggle
+#define set_log_handler ps_set_log_handler
+#define get_log_handler ps_get_log_handler
+#define default_log_handler ps_default_log_handler
+#define log_print ps_log_print
+#define _log_level_prefixes __i_ps_log_level_prefixes
+#define _get_log_level_index __i_ps_get_log_level_index
+#define set_log_prefix ps_set_log_prefix
+#define _get_log_prefix __i_ps_get_log_prefix
+#define log_levels_enabled ps_log_levels_enabled
+#define log_handler ps_log_handler
+#endif /* PS_STRIP_PREFIX */
+
 
 #endif /* _H_PS_LOG_H_ */

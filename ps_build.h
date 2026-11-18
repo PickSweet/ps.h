@@ -25,19 +25,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_BUILD_H_
 #define _H_PS_BUILD_H_
 
-#ifdef PS_STRIP_PREFIX
-#ifdef BUILD_IMP
-#define PS_BUILD_IMP
-#endif /* BUILD_IMP */
-#endif /* PS_STRIP_PREFIX */
-
-
-#ifdef PS_BUILD_IMP
-#define PS_CORE_IMP
-#define PS_COLLECTIONS_IMP
-#define PS_LOG_IMP
-#define PS_FILE_IMP
-#endif
 #include "ps_core.h"
 #include "ps_collections.h"
 #include "ps_log.h"
@@ -136,34 +123,8 @@ int ps_build_shell_cmd_fn(const char **ctx);
 #define _ps_build_append_child_shell_cmd_list(builder,parent_idx,list)\
     _ps_build_append_child_cmd_list(builder,parent_idx,ps_build_shell_cmd_fn,list)
 
-#ifdef PS_STRIP_PREFIX
-#define BUILD_CC PS_BUILD_CC
-#define build_fn_t ps_build_fn_t
-#define idx_t ps_idx_t
-#define graph_node_t ps_graph_node_t
-#define graph_t ps_graph_t
-#define builder_t ps_builder_t
-#define build_free ps_build_free
-#define _build_append_child_cmd _ps_build_append_child_cmd
-#define _build_append_cmd _ps_build_append_cmd
-#define _build_append_child_cmd_with_ctx _ps_build_append_child_cmd_with_ctx
-#define _build_append_child_cmd_list _ps_build_append_child_cmd_list
-#define _build_append_cmd_with_ctx _ps_build_append_cmd_with_ctx
-#define _build_append_cmd_list _ps_build_append_cmd_list
-#define _build_append_group _ps_build_append_group
-#define _build_append_child_group _ps_build_append_child_group
-#define _build_free_after_run _ps_build_free_after_run
-#define build_frame_t ps_build_frame_t
-#define build_run ps_build_run
-#define build_shell_cmd_fn ps_build_shell_cmd_fn
-#define _build_append_shell_cmd _ps_build_append_shell_cmd
-#define _build_append_shell_cmd_list _ps_build_append_shell_cmd_list
-#define _build_append_child_shell_cmd _ps_build_append_child_shell_cmd
-#define _build_append_child_shell_cmd_list _ps_build_append_child_shell_cmd_list
 
-#endif /* PS_STRIP_PREFIX */
-
-#ifdef PS_BUILD_IMP
+#ifdef PS_IMP
 #define PS_SRC_FILE() __FILE__
 #define _ps_build_rebuild_yourself(args) __i_ps_build_rebuild_yourself(args, __FILE__);
 #ifdef PS_STRIP_PREFIX
@@ -349,7 +310,7 @@ void __i_ps_build_rebuild_yourself(char ***args, const char *src_file){
     }
 }
 
-#ifndef PSBUILD_NO_BOILER
+#ifndef PS_BUILD_NO_BOILER
 
 int build(ps_builder_t *builder);
 int main(int argc, char** argv) {
@@ -365,6 +326,35 @@ int main(int argc, char** argv) {
         return result;
 }
 
-#endif /* PSBUILD_NO_BOILER */
-#endif /* PSBUILD_IMP */
-#endif /* PSBUILD_H */
+#endif /* PS_BUILD_NO_BOILER */
+#endif /* PS_IMP */
+
+#ifdef PS_STRIP_PREFIX
+#define BUILD_CC PS_BUILD_CC
+#define build_fn_t ps_build_fn_t
+#define idx_t ps_idx_t
+#define graph_node_t ps_graph_node_t
+#define graph_t ps_graph_t
+#define builder_t ps_builder_t
+#define build_free ps_build_free
+#define _build_append_child_cmd _ps_build_append_child_cmd
+#define _build_append_cmd _ps_build_append_cmd
+#define _build_append_child_cmd_with_ctx _ps_build_append_child_cmd_with_ctx
+#define _build_append_child_cmd_list _ps_build_append_child_cmd_list
+#define _build_append_cmd_with_ctx _ps_build_append_cmd_with_ctx
+#define _build_append_cmd_list _ps_build_append_cmd_list
+#define _build_append_group _ps_build_append_group
+#define _build_append_child_group _ps_build_append_child_group
+#define _build_free_after_run _ps_build_free_after_run
+#define build_frame_t ps_build_frame_t
+#define build_run ps_build_run
+#define build_shell_cmd_fn ps_build_shell_cmd_fn
+#define _build_append_shell_cmd _ps_build_append_shell_cmd
+#define _build_append_shell_cmd_list _ps_build_append_shell_cmd_list
+#define _build_append_child_shell_cmd _ps_build_append_child_shell_cmd
+#define _build_append_child_shell_cmd_list _ps_build_append_child_shell_cmd_list
+#endif /* PS_STRIP_PREFIX */
+
+
+
+#endif /* _H_PS_BUILD_H_ */

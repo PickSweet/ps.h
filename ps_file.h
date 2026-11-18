@@ -25,18 +25,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_FILE_H_
 #define _H_PS_FILE_H_
 
-#ifdef PS_STRIP_PREFIX
-#ifdef FILE_IMP
-#define PS_FILE_IMP
-#endif /* FILE_IMP */
-#endif /* PS_STRIP_PREFIX */
-
-#ifdef PS_FILE_IMP
-#define PS_CORE_IMP
-#define PS_COLLECTIONS_IMP
-#define PS_LOG_IMP
-#endif /* PS_FILE_IMP */
-
 #include "ps_core.h"
 #include "ps_collections.h"
 #include "ps_log.h"
@@ -86,31 +74,7 @@ PS_DEF int ps_file_write(const char *path, ps_str_t *data, int append);
 #define _ps_path_parts(path_p) (_ps_list_split(&(path_p)->items, (char[]){PS_PATH_SEP}))
 #define _ps_path_basename(path_p) (_ps_list_items(&(path_p)->items) + _ps_list_find_last(&(path_p)->items, (char[]){PS_PATH_SEP}) + 1)
 
-#ifdef PS_STRIP_PREFIX
-#define FILE_HANDLE PS_FILE_HANDLE
-#define PATH_SEP PS_PATH_SEP
-#define ALT_PATH_SEP PS_ALT_PATH_SEP
-#define WINDOWS_EPOCH_DIFF PS_WINDOWS_EPOCH_DIFF
-#define path_list_t ps_path_list_t
-#define glob_match ps_glob_match
-#define path_normalize_sep ps_path_normalize_sep
-#define dir_exists ps_dir_exists
-#define dir_ensure ps_dir_ensure
-#define dir_create ps_dir_create
-#define dir_delete ps_dir_delete
-#define dir_find_files ps_dir_find_files
-#define file_exists ps_file_exists
-#define file_delete ps_file_delete
-#define file_rename ps_file_rename
-#define file_get_mod_time ps_file_get_mod_time
-#define file_copy ps_file_copy
-#define file_read_all ps_file_read_all
-#define file_write ps_file_write
-#define _path_parts _ps_path_parts
-#define _path_basename _ps_path_basename
-#endif /* PS_STRIP_PREFIX */
-
-#ifdef PS_FILE_IMP
+#ifdef PS_IMP
 
 PS_DEF int ps_glob_match(const char *pattern, const char *str){
     const char *p = pattern;
@@ -407,6 +371,31 @@ PS_DEF int ps_file_write(const char *path, ps_str_t *data, int append){
 #endif
 }
 
-#endif /* PS_FILE_IMP */
+#endif /* PS_IMP */
+
+#ifdef PS_STRIP_PREFIX
+#define FILE_HANDLE PS_FILE_HANDLE
+#define PATH_SEP PS_PATH_SEP
+#define ALT_PATH_SEP PS_ALT_PATH_SEP
+#define WINDOWS_EPOCH_DIFF PS_WINDOWS_EPOCH_DIFF
+#define path_list_t ps_path_list_t
+#define glob_match ps_glob_match
+#define path_normalize_sep ps_path_normalize_sep
+#define dir_exists ps_dir_exists
+#define dir_ensure ps_dir_ensure
+#define dir_create ps_dir_create
+#define dir_delete ps_dir_delete
+#define dir_find_files ps_dir_find_files
+#define file_exists ps_file_exists
+#define file_delete ps_file_delete
+#define file_rename ps_file_rename
+#define file_get_mod_time ps_file_get_mod_time
+#define file_copy ps_file_copy
+#define file_read_all ps_file_read_all
+#define file_write ps_file_write
+#define _path_parts _ps_path_parts
+#define _path_basename _ps_path_basename
+#endif /* PS_STRIP_PREFIX */
+
 
 #endif /* _H_PS_FILE_H_ */

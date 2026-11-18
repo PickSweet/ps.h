@@ -145,17 +145,6 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define _ps_unwrap(result)\
     *(((_ps_typeof(result.result)*)&result)[_ps_do_assert(!result.error && "Attempted to unwrap an result_t error", 0])
 
-#ifdef PS_STRIP_PREFIX
-#ifdef FULL_SIZE_T
-#define PS_FULL_SIZE_T FULL_SIZE_T
-#endif /* FULL_SIZE_T */
-#endif /* PS_STRIP_PREFIX */
-
-#ifdef PS_STRIP_PREFIX
-#ifdef HALF_SIZE_T
-#define PS_HALF_SIZE_T HALF_SIZE_T
-#endif /* HALF_SIZE_T */
-#endif /* PS_STRIP_PREFIX */
 
 #ifndef PS_FULL_SIZE_T
 #define PS_FULL_SIZE_T long long
@@ -170,24 +159,10 @@ typedef unsigned PS_FULL_SIZE_T ps_size_t;
 typedef PS_HALF_SIZE_T ps_ihalf_t;
 typedef unsigned PS_HALF_SIZE_T ps_half_t;
 
-#ifdef PS_STRIP_PREFIX
-typedef ps_isize_t isize_t;
-typedef ps_size_t size_t;
-typedef ps_ihalf_t ihalf_t;
-typedef ps_half_t half_t;
-#endif /* PS_STRIP_PREFIX */
-
 
 PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size);
 
-#ifdef PS_STRIP_PREFIX
-#define mem_eql ps_mem_eql
-#ifdef CORE_IMP
-#define PS_CORE_IMP
-#endif /* CORE_IMP */
-#endif /* PS_STRIP_PREFIX */
-
-#ifdef PS_CORE_IMP
+#ifdef PS_IMP
 
 PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
     if (a == b)return 1;
@@ -202,7 +177,7 @@ PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
     return !cmp;
 }
 
-#endif /* PS_CORE_IMP */
+#endif /* PS_IMP */
 
 #ifdef PS_STRIP_PREFIX
 #define _stringify _ps_stringify
@@ -226,6 +201,11 @@ PS_DEF int ps_mem_eql(const void *a, const void *b, ps_size_t size) {
 #define _printf_format _ps_printf_format
 #define _result_t _ps_result_t
 #define _unwrap _ps_unwrap
+#define mem_eql ps_mem_eql
+typedef ps_isize_t isize_t;
+typedef ps_size_t size_t;
+typedef ps_ihalf_t ihalf_t;
+typedef ps_half_t half_t;
 #endif /* PS_STRIP_PREFIX */
 
 #endif /* _H_PS_CORE_H_ */
