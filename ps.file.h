@@ -25,9 +25,9 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _H_PS_FILE_H_
 #define _H_PS_FILE_H_
 
-#include "ps_core.h"
-#include "ps_collections.h"
-#include "ps_log.h"
+#include "ps.core.h"
+#include "ps.collections.h"
+#include "ps.log.h"
 
 #include <stdio.h>
 #include <time.h>
