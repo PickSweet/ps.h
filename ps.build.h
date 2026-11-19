@@ -113,13 +113,13 @@ PS_DEF int ps_build_run(ps_graph_t graph);
 int ps_build_shell_cmd_fn(const char **ctx);
 
 #define _ps_build_append_shell_cmd(builder,...)\
-    _ps_build_append_cmd_with_ctx(builder,ps_build_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
+    _ps_build_append_cmd_with_ctx(builder,ps_build_shell_cmd_fn, const char*[], __VA_ARGS__, NULL)
 
 #define _ps_build_append_shell_cmd_list(builder,list)\
     _ps_build_append_cmd_list(builder,ps_build_shell_cmd_fn,list)
 
 #define _ps_build_append_child_shell_cmd(builder,parent_idx, ...)\
-    _ps_build_append_child_cmd_with_ctx(builder,parent_idx, ps_build_shell_cmd_fn, const char*[], __VA_ARGS__, NULL);\
+    _ps_build_append_child_cmd_with_ctx(builder,parent_idx, ps_build_shell_cmd_fn, const char*[], __VA_ARGS__, NULL)
 
 #define _ps_build_append_child_shell_cmd_list(builder,parent_idx,list)\
     _ps_build_append_child_cmd_list(builder,parent_idx,ps_build_shell_cmd_fn,list)
