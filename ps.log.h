@@ -41,7 +41,7 @@ typedef unsigned char ps_log_level_e;
 
 typedef void (ps_log_handler)(ps_log_level_e level, const char* fmt, va_list args);
 
-PS_DEF ps_log_level_e ps_log_levels_enabled = PS_LOG_ALL; /* set flags to 0 to disable certain log levels */
+PS_DEF ps_log_level_e ps_log_levels_enabled; /* set flags to 0 to disable certain log levels */
 
 
 PS_DEF void ps_log_level_disable(ps_log_level_e levels);
@@ -55,13 +55,16 @@ PS_DEF ps_log_handler ps_default_log_handler;
 
 PS_DEF void ps_log_print(ps_log_level_e level, const char* fmt, ...) _ps_printf_format(2,3);
 
-PS_DEF const char *__i_ps_log_level_prefixes[8] = {"[INFO]", "[WARNING]", "[ERROR]",0,0,0,0,0};
+PS_DEF const char *__i_ps_log_level_prefixes[8];
 
 PS_DEF unsigned char __i_ps_get_log_level_index(ps_log_level_e level);
 PS_DEF void ps_set_log_prefix(ps_log_level_e level, const char *prefix);
 PS_DEF const char *__i_ps_get_log_prefix(ps_log_level_e level);
 
 #ifdef PS_IMP
+
+PS_DEF ps_log_level_e ps_log_levels_enabled = PS_LOG_ALL;
+PS_DEF const char *__i_ps_log_level_prefixes[8] = {"[INFO]", "[WARNING]", "[ERROR]",0,0,0,0,0};
 
 PS_DEF void ps_log_level_disable(ps_log_level_e levels){
     ps_log_levels_enabled &= (~levels);
