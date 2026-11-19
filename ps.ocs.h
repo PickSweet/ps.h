@@ -134,6 +134,9 @@ PS_DEF const ps_ocs_token_tag_e PS_OCS_KEYWORD_TAGS[PS_OCS_KEYWORD_COUNT] = {
     PS_OCS_TOKEN_TAG_KEYWORD_USING,
 };
 
+PS_DEF const char *PS_OCS_WHITESPACE_CHARS = " \r\n\t";
+PS_DEF const char *PS_OCS_IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+
 
 PS_DEF const char* ps_ocs_token_tag_to_string(ps_ocs_token_tag_e tag){
     switch(tag){
@@ -273,6 +276,7 @@ PS_DEF ps_ocs_token_t ps_ocs_lexer_next(ps_ocs_lexer_t *lexer){
             if (lexer->cursor < lexer->source.size) goto ps_ocs_lexer_state_l;
             token.tag = PS_OCS_TOKEN_TAG_SINGLE_LINE_COMMENT;
             token.span.end = lexer->cursor;
+            break;
         }
         case PS_OCS_LEXER_STATE_MULTI_LINE_COMMENT:{
             if (c == '\0'){
@@ -365,10 +369,13 @@ PS_DEF ps_ocs_token_list_t ps_ocs_lexer_tokenize(ps_str_view_t source){
     lexer.location.column = 1;
 
     ps_ocs_token_list_t tokens = {0};
-    while (lexer.cursor < source.size) {
-        ps_ocs_token_t token = ps_ocs_lexer_next(&lexer);
+    ps_ocs_token_t token = ps_ocs_lexer_next(&lexer);
+    while (token.tag != PS_OCS_TOKEN_TAG_INVALID) {
         _ps_list_append_one(&tokens.items, token);
+        token = ps_ocs_lexer_next(&lexer);
     }
+    if (lexer.cursor < source.size && source.items[lexer.cursor] != '\0')
+        ps_log_print(PS_LOG_ERROR, "Got Invalid token before end of lexer source. %d:%d", lexer.location.line, lexer.location.column);
     return tokens;
 }
 
