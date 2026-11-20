@@ -197,7 +197,7 @@ typedef _ps_list_t(ps_slice_t) ps_list_slice_t;
     )
 
 #define _ps_list_clear(list_p) _ps_list_size(list_p) = 0
-#define _ps_list_is_empty(list_p) (_ps_list_size(list_p) == 0)
+#define _ps_list_is_empty(list_p) (_ps_list_items(list_p) == NULL || _ps_list_size(list_p) == 0)
 
 #define _ps_list_foreach(list_p, iter)\
     for (\
